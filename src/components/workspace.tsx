@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useBudget } from "@/components/budget-provider";
 export function Workspace({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { ready, email, error, logout } = useBudget();
+  const { ready, email, error, saving, logout } = useBudget();
   return (
     <div className="min-h-screen md:grid md:grid-cols-[240px_minmax(0,1fr)]">
       <aside className="flex flex-col border-b bg-card p-5 md:sticky md:top-0 md:h-screen md:border-r md:border-b-0">
@@ -55,10 +55,16 @@ export function Workspace({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground md:hidden">
           <span>
-            {email ? "Your account" : "Demo workspace"} · Saved on this device
+            {email ? "Your account" : "Demo workspace"} ·{" "}
+            {email ? "Cloud storage" : "Saved on this device"}
           </span>
           {email ? (
-            <Button variant="ghost" size="sm" onClick={logout}>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={saving}
+              onClick={logout}
+            >
               Sign out
             </Button>
           ) : (
@@ -82,7 +88,12 @@ export function Workspace({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           {email ? (
-            <Button variant="outline" className="w-full" onClick={logout}>
+            <Button
+              variant="outline"
+              className="w-full"
+              disabled={saving}
+              onClick={logout}
+            >
               <LogOut size={15} />
               Sign out
             </Button>
@@ -95,7 +106,9 @@ export function Workspace({ children }: { children: React.ReactNode }) {
           )}
           <p className="flex gap-2 text-xs leading-5 text-muted-foreground">
             <HardDrive className="mt-0.5 size-4 shrink-0" />
-            Saved on this device. Export your expenses to keep a backup.
+            {email
+              ? "Saved securely to your account. Available when you log in on another device."
+              : "Demo data stays on this device. Export expenses to keep a backup."}
           </p>
         </div>
       </aside>
@@ -111,7 +124,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
                 aria-hidden="true"
                 className="size-1.5 rounded-full bg-primary"
               />
-              AED · Local storage
+              AED · {email ? "Cloud storage" : "Local demo"}
             </span>
           </div>
         </header>
@@ -121,7 +134,19 @@ export function Workspace({ children }: { children: React.ReactNode }) {
               role="alert"
               className="mb-6 rounded-md border border-destructive p-4 text-sm"
             >
-              {error}
+              {error}{" "}
+              <button
+                type="button"
+                className="ml-2 underline"
+                onClick={() => window.location.reload()}
+              >
+                Reload notebook
+              </button>
+            </p>
+          )}
+          {saving && (
+            <p role="status" className="mb-4 text-xs text-muted-foreground">
+              Saving changes…
             </p>
           )}
           {ready ? (

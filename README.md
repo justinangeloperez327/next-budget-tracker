@@ -8,7 +8,7 @@ Use Node.js 24 LTS (minimum 22.13) and npm.
 
 ```sh
 npm ci
-cp .env.example .env.local
+cp .env.example .env
 npm run dev
 ```
 
@@ -19,19 +19,28 @@ Open http://localhost:3000. No environment variables are needed for the demo.
 - `/`: homepage
 - `/about`: purpose and storage information
 - `/contact`: contact form that opens an email draft when configured
-- `/login` and `/register`: Supabase account access
+- `/login` and `/register`: PostgreSQL account registration and login
 - `/dashboard`: monthly budget, spending totals, category breakdown, recent expenses
 - `/expenses`: add/edit/delete expenses, description search, category/month filters, CSV export
 
-## Account configuration
+## PostgreSQL and Vercel setup
 
-Create a Supabase project and enable email/password authentication. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in `.env.local` or your deployment environment. Use a public publishable key; never a service-role key. Configure the Supabase Auth Site URL for your deployment and enable email confirmation. Register, confirm your email, and log in. Without these variables, authentication buttons are disabled and the app clearly offers a demo.
+1. In Vercel, open this project's Storage tab and connect a PostgreSQL database from Marketplace, such as Prisma Postgres or Neon.
+2. Set server-only `DATABASE_URL` from the provider's connection settings. Standard pooled `postgres://` or `postgresql://` URLs use Prisma's pg adapter; `prisma://` and `prisma+postgres://` use Prisma Accelerate. Set `DIRECT_URL` to the provider's direct PostgreSQL URL for migrations when available. Never add a `NEXT_PUBLIC_` prefix to database credentials.
+3. Set Vercel's Build Command to `npm run build:vercel` to apply the committed migration before building. Connect preview deployments to a separate preview database; do not run experimental migrations against production. Alternatively, run `npm run db:deploy` once with the target environment's connection and keep the normal build command.
+4. Deploy the latest `main`. Open `/register` to create an account, then add a monthly budget and an expense. Log out and back in to verify persistence.
 
-Account access is implemented with Supabase Auth. Expense data remains in localStorage, separated by authenticated user ID or demo workspace; it does not sync across devices. Workspace routes expose only local browser data and have no private server API. This is an initial local-storage application, not a server-persisted finance system. Account sign-out switches back to the demo workspace. Account data is not deleted from the device on sign-out, so do not use a shared browser profile for sensitive records.
+Local setup: put credentials in `.env`, run `npm ci`, `npm run db:deploy`, then `npm run dev`. The normal build and client generation do not require a live database; `build:vercel` and migrations do. Remove the previous Supabase environment variables; Supabase is no longer used.
+
+Users, hashed passwords, sessions, expenses, and monthly budgets live in PostgreSQL. Passwords use salted scrypt hashes. Sessions use random 256-bit cookies with HttpOnly, Secure in production, SameSite=Lax, and a seven-day expiry; only token hashes are stored. Login and registration have database-backed attempt limits. Mutation handlers enforce same-origin requests and authorize every write using the cookie session. Per-user version checks reject conflicting saves from another device or tab.
+
+The UI confirms a save only after PostgreSQL accepts it. Failed saves retain the editor and expose a reload action; the app never silently falls back to demo storage for a failing account database. Up to 2,000 expenses and 600 monthly budgets per account are supported in the current snapshot API. Email verification and password-reset email delivery are not implemented yet.
+
+The guest demo still uses its existing browser storage key and requires no database. Demo records and any older Supabase browser records are not automatically imported into a new account. Keep CSV backups of existing local entries; this migration does not clear browser storage.
 
 ## Storage and features
 
-Amounts use integer minor units to avoid floating-point accounting errors. Currency is AED. Each month has a separate budget. New workspaces start empty; no sample expenses are mixed with actual entries. CSV exports the currently filtered expenses, quotes text, and neutralises spreadsheet formulas. Delete requires confirmation. Clearing browser storage deletes local expenses and budgets; export a CSV backup first. CSV import and cloud syncing are not yet implemented.
+Amounts use integer minor units to avoid floating-point accounting errors. Currency is AED. Each month has a separate budget. New accounts and demo workspaces start empty; no sample expenses are mixed with actual entries. CSV exports the currently filtered expenses, quotes text, and neutralises spreadsheet formulas. Delete requires confirmation. Clearing browser storage deletes demo expenses and budgets; authenticated records remain in PostgreSQL. CSV import and offline account editing are not implemented.
 
 Contact form: set `NEXT_PUBLIC_CONTACT_EMAIL` to your real support address. Submission opens the user's email client; the app does not claim to send mail itself.
 
@@ -44,7 +53,7 @@ npm test
 npm run build
 ```
 
-GitHub Actions runs these checks on main pushes and pull requests. Deploy to Vercel with its default Next.js preset and add the optional environment variables before building.
+GitHub Actions runs these checks, migrations, and API integration tests against an isolated PostgreSQL service on main pushes and pull requests. Deploy to Vercel with its default Next.js preset and add the optional environment variables before building.
 
 ## Components
 

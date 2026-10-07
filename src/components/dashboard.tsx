@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 export function Dashboard() {
-  const { data, save, error } = useBudget();
+  const { data, save, error, saving } = useBudget();
   const [month, setMonth] = useState(
     new Date().toLocaleDateString("en-CA").slice(0, 7),
   );
@@ -100,7 +100,7 @@ export function Dashboard() {
             <form
               key={month + budget}
               className="space-y-3"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 const cents = Math.round(
                   Number(new FormData(e.currentTarget).get("budget")) * 100,
@@ -108,10 +108,10 @@ export function Dashboard() {
                 if (
                   Number.isSafeInteger(cents) &&
                   cents >= 0 &&
-                  save({
+                  (await save({
                     ...data,
                     budgets: { ...data.budgets, [month]: cents },
-                  })
+                  }))
                 )
                   setStatus("Monthly budget saved.");
               }}
@@ -128,7 +128,7 @@ export function Dashboard() {
                   step="0.01"
                   defaultValue={budget / 100}
                 />
-                <Button disabled={!!error}>Save</Button>
+                <Button disabled={!!error || saving}>Save</Button>
               </div>
               <p role="status" className="text-sm text-muted-foreground">
                 {status}

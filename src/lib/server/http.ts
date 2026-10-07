@@ -1,0 +1,61 @@
+import "server-only";
+export class HttpError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+export function sameOrigin(request: Request) {
+  const origin = request.headers.get("origin");
+  if (!origin || origin !== new URL(request.url).origin)
+    throw new HttpError(403, "Request origin is not allowed.");
+}
+export async function readJson(
+  request: Request,
+  maxBytes = 16000,
+): Promise<Record<string, unknown>> {
+  if (!request.headers.get("content-type")?.startsWith("application/json"))
+    throw new HttpError(415, "Send JSON data.");
+  const reader = request.body?.getReader();
+  if (!reader) throw new HttpError(400, "Request data is required.");
+  let bytes = 0;
+  const chunks: Uint8Array[] = [];
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    bytes += value.byteLength;
+    if (bytes > maxBytes) {
+      await reader.cancel();
+      throw new HttpError(413, "Too much data in one request.");
+    }
+    chunks.push(value);
+  }
+  try {
+    const value = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      throw Error();
+    return value;
+  } catch {
+    throw new HttpError(400, "Invalid request data.");
+  }
+}
+export function failure(error: unknown) {
+  if (error instanceof HttpError)
+    return Response.json(
+      { error: error.message },
+      { status: error.status, headers: { "Cache-Control": "no-store" } },
+    );
+  console.error(
+    "Budget API request failed",
+    error instanceof Error ? error.name : "UnknownError",
+  );
+  return Response.json(
+    { error: "The account database is unavailable. Please try again shortly." },
+    { status: 503, headers: { "Cache-Control": "no-store" } },
+  );
+}
+export function json(data: unknown) {
+  return Response.json(data, { headers: { "Cache-Control": "no-store" } });
+}

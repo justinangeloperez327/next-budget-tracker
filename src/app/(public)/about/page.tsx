@@ -14,18 +14,19 @@ export default function About() {
       <Card className="mt-8">
         <CardHeader>
           <CardTitle className="text-lg font-medium">
-            Your data stays in your browser
+            A notebook that follows you
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm leading-6 text-muted-foreground">
           <p>
-            Expenses and budgets are currently stored on this device. They are
-            not synced to a server. Export a CSV backup before clearing your
-            browser data.
+            When you log in, expenses and budgets are saved to your account in
+            PostgreSQL and available across devices. Export a CSV whenever you
+            need a copy.
           </p>
           <p>
-            The demo is available without an account. Account access uses
-            Supabase when configured by the application owner.
+            The demo is available without an account and stays in this browser.
+            Demo entries are separate from account data and are not
+            automatically imported.
           </p>
         </CardContent>
       </Card>

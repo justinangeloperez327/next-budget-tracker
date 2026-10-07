@@ -23,7 +23,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 export function Expenses() {
-  const { data, save, error } = useBudget();
+  const { data, save, error, saving } = useBudget();
   const [search, setSearch] = useState(""),
     [category, setCategory] = useState("All"),
     [month, setMonth] = useState(""),
@@ -156,7 +156,7 @@ export function Expenses() {
                         variant="ghost"
                         className="text-destructive"
                         size="sm"
-                        disabled={!!error}
+                        disabled={!!error || saving}
                         onClick={() => setDeleting(e)}
                         aria-label={`Delete ${e.description}`}
                       >
@@ -190,10 +190,10 @@ export function Expenses() {
             </Button>
             <Button
               variant="destructive"
-              disabled={!!error}
-              onClick={() => {
+              disabled={!!error || saving}
+              onClick={async () => {
                 if (
-                  save({
+                  await save({
                     ...data,
                     expenses: data.expenses.filter(
                       (e) => e.id !== deleting?.id,

@@ -3,7 +3,6 @@ import { SakuraCat } from "@/components/sakura-companion";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,29 +13,42 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-export function AuthForm({ register = false }: { register?: boolean }) {
+export function AuthForm({
+  register = false,
+  configured = false,
+}: {
+  register?: boolean;
+  configured?: boolean;
+}) {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!supabase) return;
+    if (!configured) return;
     setPending(true);
     setMessage("");
     const data = new FormData(event.currentTarget);
     const email = String(data.get("email")),
       password = String(data.get("password"));
     try {
-      const result = register
-        ? await supabase.auth.signUp({
+      const response = await fetch(
+        `/api/auth/${register ? "register" : "login"}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             email,
             password,
-            options: { data: { full_name: String(data.get("name")) } },
-          })
-        : await supabase.auth.signInWithPassword({ email, password });
-      if (result.error) throw result.error;
-      if (result.data.session) router.push("/dashboard");
-      else setMessage("Check your email to confirm your account, then log in.");
+            name: String(data.get("name") || ""),
+          }),
+        },
+      );
+      const result = await response.json();
+      if (!response.ok)
+        throw Error(result.error || "Account access failed. Try again.");
+      router.push("/dashboard");
+      router.refresh();
     } catch (error) {
       setMessage(
         error instanceof Error
@@ -82,6 +94,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
                 id="email"
                 name="email"
                 type="email"
+                maxLength={254}
                 autoComplete="email"
                 required
               />
@@ -94,10 +107,11 @@ export function AuthForm({ register = false }: { register?: boolean }) {
                 type="password"
                 autoComplete={register ? "new-password" : "current-password"}
                 minLength={8}
+                maxLength={256}
                 required
               />
             </div>
-            {!supabase && (
+            {!configured && (
               <p className="text-sm text-muted-foreground">
                 Account access is not configured yet. You can explore the demo
                 below.
@@ -106,7 +120,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
             <p role="status" className="text-sm">
               {message}
             </p>
-            <Button className="w-full" disabled={pending || !supabase}>
+            <Button className="w-full" disabled={pending || !configured}>
               {pending
                 ? "Please wait…"
                 : register

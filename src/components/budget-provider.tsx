@@ -1,94 +1,128 @@
 "use client";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { emptyData, validData, type BudgetData } from "@/lib/budget";
 type Context = {
   data: BudgetData;
   ready: boolean;
   email: string | null;
   error: string;
-  save: (d: BudgetData) => boolean;
+  saving: boolean;
+  save: (data: BudgetData) => Promise<boolean>;
   logout: () => Promise<void>;
 };
 const BudgetContext = createContext<Context | null>(null);
+const DEMO_KEY = "budget-tracker:v1:demo";
 export function BudgetProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [data, setData] = useState<BudgetData>(emptyData),
-    [ready, setReady] = useState(false),
-    [email, setEmail] = useState<string | null>(null),
-    [key, setKey] = useState(""),
-    [error, setError] = useState("");
+  const [data, setData] = useState<BudgetData>(emptyData);
+  const [ready, setReady] = useState(false);
+  const [email, setEmail] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const revision = useRef(0);
+  const busy = useRef(false);
   useEffect(() => {
-    let active = true;
-    function load(id?: string, email?: string) {
-      if (!active) return;
-      setReady(false);
-      const key = "budget-tracker:v1:" + (id || "demo");
-      setKey(key);
-      setEmail(email || null);
-      setError("");
+    const controller = new AbortController();
+    async function load() {
       try {
-        const raw = localStorage.getItem(key);
-        const parsed = raw ? JSON.parse(raw) : emptyData;
-        if (!validData(parsed)) throw Error("Invalid saved data");
-        setData(parsed);
-      } catch {
-        setData(emptyData);
+        const response = await fetch("/api/workspace", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const result = await response.json();
+        if (!response.ok)
+          throw Error(result.error || "Your notebook could not be loaded.");
+        if (controller.signal.aborted) return;
+        if (result.user) {
+          if (!validData(result.data))
+            throw Error("Saved data could not be read. Reload to try again.");
+          revision.current = result.revision;
+          setEmail(result.user.email);
+          setData(result.data);
+        } else {
+          const raw = localStorage.getItem(DEMO_KEY);
+          const parsed = raw ? JSON.parse(raw) : emptyData;
+          if (!validData(parsed))
+            throw Error(
+              "The demo's saved data could not be read. Recover your browser storage before resetting it.",
+            );
+          setData(parsed);
+        }
+      } catch (cause) {
+        if (controller.signal.aborted) return;
         setError(
-          "Saved data could not be loaded. Changes are blocked to protect it. Export or recover your browser storage before resetting it.",
+          cause instanceof Error
+            ? cause.message
+            : "Unable to load your notebook. Reload to try again.",
         );
+      } finally {
+        if (!controller.signal.aborted) setReady(true);
       }
-      setReady(true);
     }
-    if (!supabase) {
-      load();
-      return;
-    }
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (error) {
-        setError("Account session could not be loaded. Reload to try again.");
-        return;
-      }
-      load(data.session?.user.id, data.session?.user.email);
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => load(session?.user.id, session?.user.email),
-    );
-    return () => {
-      active = false;
-      listener.subscription.unsubscribe();
-    };
+    void load();
+    return () => controller.abort();
   }, []);
-  function save(next: BudgetData) {
-    if (!ready || error) return false;
+  async function save(next: BudgetData) {
+    if (!ready || error || busy.current) return false;
+    busy.current = true;
+    setSaving(true);
     try {
-      localStorage.setItem(key, JSON.stringify(next));
+      if (email) {
+        const response = await fetch("/api/workspace", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data: next, revision: revision.current }),
+        });
+        const result = await response.json();
+        if (!response.ok)
+          throw Error(
+            result.error || "Changes could not be saved. Reload to try again.",
+          );
+        revision.current = result.revision;
+      } else localStorage.setItem(DEMO_KEY, JSON.stringify(next));
       setData(next);
       return true;
-    } catch {
+    } catch (cause) {
       setError(
-        "Browser storage is unavailable or full. Your last saved data is unchanged.",
+        cause instanceof Error
+          ? cause.message
+          : "Changes could not be saved. Reload before trying again.",
       );
       return false;
+    } finally {
+      busy.current = false;
+      setSaving(false);
     }
   }
   async function logout() {
-    const result = await supabase?.auth.signOut();
-    if (result?.error) {
-      setError(result.error.message);
-      return;
+    if (busy.current) return;
+    busy.current = true;
+    setSaving(true);
+    try {
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok) throw Error("Sign out failed. Please try again.");
+      setData(emptyData);
+      setEmail(null);
+      router.push("/login");
+      router.refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to sign out.");
+    } finally {
+      busy.current = false;
+      setSaving(false);
     }
-    router.push("/login");
   }
   return (
-    <BudgetContext.Provider value={{ data, ready, email, error, save, logout }}>
+    <BudgetContext.Provider
+      value={{ data, ready, email, error, saving, save, logout }}
+    >
       {children}
     </BudgetContext.Provider>
   );
 }
 export function useBudget() {
-  const c = useContext(BudgetContext);
-  if (!c) throw Error("BudgetProvider required");
-  return c;
+  const context = useContext(BudgetContext);
+  if (!context) throw Error("BudgetProvider required");
+  return context;
 }

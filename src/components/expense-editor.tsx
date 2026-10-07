@@ -14,10 +14,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 export function ExpenseEditor({ expense }: { expense?: Expense }) {
-  const { data, save, error } = useBudget();
+  const { data, save, error, saving } = useBudget();
   const [open, setOpen] = useState(false),
     [message, setMessage] = useState("");
-  function submit(e: React.FormEvent<HTMLFormElement>) {
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const description = String(f.get("description")).trim();
@@ -34,7 +34,7 @@ export function ExpenseEditor({ expense }: { expense?: Expense }) {
       date: String(f.get("date")),
     };
     if (
-      save({
+      await save({
         ...data,
         expenses: expense
           ? data.expenses.map((e) => (e.id === expense.id ? next : e))
@@ -51,7 +51,7 @@ export function ExpenseEditor({ expense }: { expense?: Expense }) {
         <Button
           variant={expense ? "ghost" : "default"}
           size={expense ? "sm" : "default"}
-          disabled={!!error}
+          disabled={!!error || saving}
         >
           {expense ? "Edit" : "Add expense"}
         </Button>
@@ -113,7 +113,7 @@ export function ExpenseEditor({ expense }: { expense?: Expense }) {
           <p role="status" className="text-sm text-destructive">
             {message || error}
           </p>
-          <Button type="submit" disabled={!!error}>
+          <Button type="submit" disabled={!!error || saving}>
             Save expense
           </Button>
         </form>
