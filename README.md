@@ -61,3 +61,5 @@ npx shadcn@latest add @kokonutui/spotlight-cards
 ```
 
 Local adaptations live in `src/components/kokonutui`; review changes before overwriting them with registry updates.
+
+The app uses a Kokonut-style neutral palette: white surfaces, zinc text and borders, and charcoal primary actions. Decorative hero and spotlight colors stay monochrome; destructive and over-budget indicators retain red for clarity.

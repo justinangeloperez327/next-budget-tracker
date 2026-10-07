@@ -35,7 +35,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
                 key={String(href)}
                 href={String(href)}
                 aria-current={pathname === href ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${pathname === href ? "bg-indigo-50 font-medium text-primary" : "text-muted-foreground hover:bg-muted"}`}
+                className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${pathname === href ? "bg-zinc-100 font-medium text-primary" : "text-muted-foreground hover:bg-muted"}`}
               >
                 <NavIcon size={18} />
                 {String(label)}

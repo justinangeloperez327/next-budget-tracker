@@ -101,14 +101,14 @@ export default function ShapeHero({
       >
         <ElegantShape
           className="-top-40 -right-20"
-          gradient="from-indigo-500/20"
+          gradient="from-zinc-500/15"
           width={350}
           height={400}
           rotate={-12}
         />
         <ElegantShape
           className="-bottom-40 -left-20"
-          gradient="from-violet-500/15"
+          gradient="from-zinc-400/10"
           width={400}
           height={300}
           rotate={20}

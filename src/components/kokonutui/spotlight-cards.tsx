@@ -206,7 +206,7 @@ export default function SpotlightCards({
 
       {/* Header */}
       <div className="relative mb-8 flex flex-col gap-1.5">
-        <p className="font-semibold text-[10px] text-indigo-600 uppercase tracking-[0.22em] dark:text-indigo-400/80">
+        <p className="font-semibold text-[10px] text-zinc-600 uppercase tracking-[0.22em] dark:text-zinc-400">
           {eyebrow}
         </p>
         <h2 className="font-semibold text-[22px] text-zinc-900 tracking-tight dark:text-white">

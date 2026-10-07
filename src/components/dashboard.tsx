@@ -48,21 +48,21 @@ export function Dashboard() {
             label: "Monthly budget",
             value: money(budget),
             icon: Wallet,
-            color: "#4f46e5",
+            color: "#27272a",
             description: "Your plan for the month",
           },
           {
             label: "Total spent",
             value: money(spent),
             icon: Receipt,
-            color: "#9a6410",
+            color: "#3f3f46",
             description: `${expenses.length} expenses recorded`,
           },
           {
             label: budget && spent > budget ? "Over budget" : "Remaining",
             value: budget ? money(Math.abs(budget - spent)) : "Set a budget",
             icon: Target,
-            color: budget && spent > budget ? "#b42318" : "#0f766e",
+            color: budget && spent > budget ? "#b42318" : "#52525b",
             description: budget
               ? spent > budget
                 ? "Review your monthly plan"

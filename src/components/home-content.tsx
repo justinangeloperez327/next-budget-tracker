@@ -45,7 +45,7 @@ export function HomeContent() {
               Try the demo without an account.
             </p>
           </div>
-          <div className="min-w-0 rounded-xl border bg-white p-6 shadow-[0_12px_48px_-24px_rgba(79,70,229,0.3)] sm:p-8">
+          <div className="min-w-0 rounded-xl border bg-white p-6 shadow-[0_12px_48px_-24px_rgba(24,24,27,0.16)] sm:p-8">
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-medium">
                 Your month, at a glance
@@ -70,9 +70,9 @@ export function HomeContent() {
             </div>
             <div className="mt-6 divide-y border-t text-sm">
               {[
-                ["Groceries", "AED 850", "bg-indigo-50"],
-                ["Transport", "AED 300", "bg-teal-50"],
-                ["Other expenses", "AED 1,000", "bg-amber-50"],
+                ["Groceries", "AED 850", "bg-zinc-100"],
+                ["Transport", "AED 300", "bg-zinc-200"],
+                ["Other expenses", "AED 1,000", "bg-zinc-300"],
               ].map(([label, value, color]) => (
                 <div
                   key={label}
@@ -102,21 +102,21 @@ export function HomeContent() {
             title: "Capture the everyday",
             description:
               "Add expenses, organise categories, and find transactions quickly.",
-            color: "#4f46e5",
+            color: "#27272a",
           },
           {
             icon: Target,
             title: "Give spending a limit",
             description:
               "Set a monthly budget and keep your remaining balance in view.",
-            color: "#0f766e",
+            color: "#52525b",
           },
           {
             icon: ChartNoAxesCombined,
             title: "See the bigger picture",
             description:
               "Review spending by category and export a CSV backup whenever you need.",
-            color: "#9a6410",
+            color: "#3f3f46",
           },
         ]}
       />
