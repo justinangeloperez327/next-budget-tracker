@@ -23,10 +23,6 @@ export default function About() {
             account and available across devices. Export a CSV whenever you need
             a copy.
           </p>
-          <p>
-            The demo is available without an account. Demo entries stay separate
-            from your signed-in account data.
-          </p>
         </CardContent>
       </Card>
     </section>

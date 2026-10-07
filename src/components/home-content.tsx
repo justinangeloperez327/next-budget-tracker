@@ -7,7 +7,6 @@ import {
   ListFilter,
   Target,
   Wallet,
-  ArrowUpRight,
 } from "lucide-react";
 import { SakuraStamp, SakuraCat } from "@/components/sakura-companion";
 import ShapeHero from "@/components/kokonutui/shape-hero";
@@ -38,18 +37,13 @@ export function HomeContent() {
                   Start tracking <ArrowRight />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link href="/dashboard">
-                  Explore demo <ArrowUpRight />
-                </Link>
-              </Button>
             </div>
             <div className="mt-6 flex items-center gap-3">
               <SakuraCat className="w-16" />
               <p className="text-xs leading-5 text-muted-foreground">
                 Small steps, a calmer month.
                 <br />
-                Try the demo without an account.
+                Your account keeps your budget in sync.
               </p>
             </div>
           </div>

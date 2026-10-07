@@ -58,7 +58,7 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-4 px-6 py-6 text-sm text-muted-foreground">
         <span>Budget Tracker · Make room for what matters.</span>
         <Link className="hover:text-primary" href="/dashboard">
-          Explore the demo ↗
+          Open your workspace ↗
         </Link>
       </div>
     </footer>

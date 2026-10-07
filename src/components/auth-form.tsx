@@ -13,19 +13,12 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-export function AuthForm({
-  register = false,
-  configured = false,
-}: {
-  register?: boolean;
-  configured?: boolean;
-}) {
+export function AuthForm({ register = false }: { register?: boolean }) {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!configured) return;
     setPending(true);
     setMessage("");
     const data = new FormData(event.currentTarget);
@@ -111,16 +104,10 @@ export function AuthForm({
                 required
               />
             </div>
-            {!configured && (
-              <p className="text-sm text-muted-foreground">
-                Account sign-in is temporarily unavailable. You can still explore
-                the demo below.
-              </p>
-            )}
             <p role="status" className="text-sm">
               {message}
             </p>
-            <Button className="w-full" disabled={pending || !configured}>
+            <Button className="w-full" disabled={pending}>
               {pending
                 ? "Please wait…"
                 : register
@@ -137,9 +124,6 @@ export function AuthForm({
               {register ? "Log in" : "Create account"}
             </Link>
           </p>
-          <Button variant="outline" className="mt-5 w-full" asChild>
-            <Link href="/dashboard">Explore demo</Link>
-          </Button>
         </CardContent>
       </Card>
     </section>

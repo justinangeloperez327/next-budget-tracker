@@ -1,13 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Receipt,
-  LogOut,
-  ArrowUpRight,
-  HardDrive,
-} from "lucide-react";
+import { LayoutDashboard, Receipt, LogOut, HardDrive } from "lucide-react";
 import { ThemeControls } from "@/components/theme-controls";
 import { SakuraCat } from "@/components/sakura-companion";
 import { Brand } from "@/components/site-header";
@@ -38,77 +32,54 @@ export function Workspace({ children }: { children: React.ReactNode }) {
               ["/dashboard", "Dashboard", LayoutDashboard],
               ["/expenses", "Expense tracker", Receipt],
             ] as const
-          ).map(([href, label, Icon]) => {
-            const NavIcon = Icon;
-            return (
-              <Link
-                key={String(href)}
-                href={String(href)}
-                aria-current={pathname === href ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${pathname === href ? "bg-muted font-medium text-primary" : "text-muted-foreground hover:bg-muted"}`}
-              >
-                <NavIcon size={18} />
-                {String(label)}
-              </Link>
-            );
-          })}
+          ).map(([href, label, Icon]) => (
+            <Link
+              key={href}
+              href={href}
+              aria-current={pathname === href ? "page" : undefined}
+              className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${pathname === href ? "bg-muted font-medium text-primary" : "text-muted-foreground hover:bg-muted"}`}
+            >
+              <Icon size={18} />
+              {label}
+            </Link>
+          ))}
         </nav>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground md:hidden">
-          <span>
-            {email ? "Your account" : "Demo workspace"} ·{" "}
-            {email ? "Synced" : "Demo mode"}
-          </span>
-          {email ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={saving}
-              onClick={logout}
-            >
-              Sign out
-            </Button>
-          ) : (
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/login">Log in</Link>
-            </Button>
-          )}
+          <span>Your account · Synced</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={saving}
+            onClick={logout}
+          >
+            Sign out
+          </Button>
         </div>
         <div className="mt-6 hidden space-y-4 border-t pt-5 text-sm md:mt-auto md:block">
           <div className="flex items-start gap-3">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted font-medium text-primary">
-              {email ? email[0].toUpperCase() : "D"}
+              {email?.[0]?.toUpperCase() || "A"}
             </span>
             <div className="min-w-0">
-              <p className="font-medium">
-                {email ? "Your account" : "Demo workspace"}
-              </p>
+              <p className="font-medium">Your account</p>
               <p className="mt-1 break-all text-xs text-muted-foreground">
-                {email || "No account required"}
+                {email || "Loading account…"}
               </p>
             </div>
           </div>
-          {email ? (
-            <Button
-              variant="outline"
-              className="w-full"
-              disabled={saving}
-              onClick={logout}
-            >
-              <LogOut size={15} />
-              Sign out
-            </Button>
-          ) : (
-            <Button variant="outline" className="w-full" asChild>
-              <Link href="/login">
-                Log in <ArrowUpRight size={15} />
-              </Link>
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            className="w-full"
+            disabled={saving}
+            onClick={logout}
+          >
+            <LogOut size={15} />
+            Sign out
+          </Button>
           <p className="flex gap-2 text-xs leading-5 text-muted-foreground">
             <HardDrive className="mt-0.5 size-4 shrink-0" />
-            {email
-              ? "Saved securely to your account. Available when you log in on another device."
-              : "Demo data stays on this device. Export expenses to keep a backup."}
+            Saved securely to your account. Available when you log in on another
+            device.
           </p>
         </div>
       </aside>
@@ -124,7 +95,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
                 aria-hidden="true"
                 className="size-1.5 rounded-full bg-primary"
               />
-              AED · {email ? "Synced" : "Demo mode"}
+              AED · Synced
             </span>
           </div>
         </header>

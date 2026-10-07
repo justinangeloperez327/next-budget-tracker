@@ -1,4 +1,4 @@
-import { db, databaseConfigured } from "@/lib/server/db";
+import { db } from "@/lib/server/db";
 import { createSession, destroySession } from "@/lib/server/session";
 import { hashPassword, verifyPassword } from "@/lib/auth-crypto";
 import {
@@ -23,11 +23,6 @@ export async function POST(
       await destroySession();
       return json({ ok: true });
     }
-    if (!databaseConfigured())
-      throw new HttpError(
-        503,
-        "Account sign-in is temporarily unavailable. You can still explore the demo.",
-      );
     const input = await readJson(request);
     const email =
       typeof input.email === "string" ? input.email.trim().toLowerCase() : "";
@@ -46,7 +41,6 @@ export async function POST(
       );
     if (password.length > 256)
       throw new HttpError(400, "Password must be at most 256 characters.");
-    // Vercel sets x-forwarded-for; email limits also apply regardless of proxy headers.
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
     await throttle(`${action}:ip:${ip}`, 30);
@@ -73,7 +67,6 @@ export async function POST(
       return json({ ok: true });
     }
     const user = await db().user.findUnique({ where: { email } });
-    // Always run scrypt, including for unknown accounts, to limit timing leakage.
     const dummy = "scrypt:" + "0".repeat(32) + ":" + "0".repeat(128);
     const valid = await verifyPassword(password, user?.passwordHash || dummy);
     if (!user || !valid)

@@ -12,7 +12,7 @@ cp .env.example .env
 npm run dev
 ```
 
-Open http://localhost:3000. No environment variables are needed for the demo.
+Set `DATABASE_URL` in `.env`, deploy the migration with `npm run db:deploy`, then open http://localhost:3000.
 
 ## Pages
 
@@ -34,13 +34,11 @@ Local setup: put credentials in `.env`, run `npm ci`, `npm run db:deploy`, then 
 
 Users, hashed passwords, sessions, expenses, and monthly budgets live in PostgreSQL. Passwords use salted scrypt hashes. Sessions use random 256-bit cookies with HttpOnly, Secure in production, SameSite=Lax, and a seven-day expiry; only token hashes are stored. Login and registration have database-backed attempt limits. Mutation handlers enforce same-origin requests and authorize every write using the cookie session. Per-user version checks reject conflicting saves from another device or tab.
 
-The UI confirms a save only after PostgreSQL accepts it. Failed saves retain the editor and expose a reload action; the app never silently falls back to demo storage for a failing account database. Up to 2,000 expenses and 600 monthly budgets per account are supported in the current snapshot API. Email verification and password-reset email delivery are not implemented yet.
-
-The guest demo still uses its existing browser storage key and requires no database. Demo records and any older Supabase browser records are not automatically imported into a new account. Keep CSV backups of existing local entries; this migration does not clear browser storage.
+The UI confirms a save only after PostgreSQL accepts it. Failed saves retain the editor and expose a reload action. Workspace routes require authentication and never fall back to browser storage. Up to 2,000 expenses and 600 monthly budgets per account are supported in the current snapshot API. Email verification and password-reset email delivery are not implemented yet.
 
 ## Storage and features
 
-Amounts use integer minor units to avoid floating-point accounting errors. Currency is AED. Each month has a separate budget. New accounts and demo workspaces start empty; no sample expenses are mixed with actual entries. CSV exports the currently filtered expenses, quotes text, and neutralises spreadsheet formulas. Delete requires confirmation. Clearing browser storage deletes demo expenses and budgets; authenticated records remain in PostgreSQL. CSV import and offline account editing are not implemented.
+Amounts use integer minor units to avoid floating-point accounting errors. Currency is AED. Each month has a separate budget. New accounts start empty; no sample expenses are mixed with actual entries. CSV exports the currently filtered expenses, quotes text, and neutralises spreadsheet formulas. Delete requires confirmation. CSV import and offline editing are not implemented.
 
 Contact form: set `NEXT_PUBLIC_CONTACT_EMAIL` to your real support address. Submission opens the user's email client; the app does not claim to send mail itself.
 

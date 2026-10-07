@@ -1,13 +1,12 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { db, databaseConfigured } from "@/lib/server/db";
+import { db } from "@/lib/server/db";
 import { sessionToken, tokenHash } from "@/lib/auth-crypto";
 const COOKIE = "budget-session";
 const TTL = 60 * 60 * 24 * 7;
 export async function currentUser() {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
-  if (!databaseConfigured()) throw new Error("Database unavailable");
   if (!/^[a-f0-9]{64}$/.test(token)) return null;
   const session = await db().session.findUnique({
     where: { tokenHash: tokenHash(token) },

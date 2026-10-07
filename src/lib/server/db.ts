@@ -3,9 +3,6 @@ import { PrismaClient } from "@/generated/prisma/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { PrismaPg } from "@prisma/adapter-pg";
 const globalDb = globalThis as unknown as { budgetDb?: PrismaClient };
-export function databaseConfigured() {
-  return Boolean(process.env.DATABASE_URL);
-}
 export function db(): PrismaClient {
   if (!process.env.DATABASE_URL) throw new Error("Database unavailable");
   if (!globalDb.budgetDb) {

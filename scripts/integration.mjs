@@ -39,7 +39,7 @@ try {
   let started = false;
   for (let n = 0; n < 100; n++) {
     try {
-      if ((await request("/api/workspace")).ok) {
+      if ((await request("/api/workspace")).status === 401) {
         started = true;
         break;
       }
@@ -47,9 +47,7 @@ try {
     await setTimeout(100);
   }
   assert.ok(started, "server starts");
-  assert.deepEqual(await (await request("/api/workspace")).json(), {
-    user: null,
-  });
+  assert.equal((await request("/api/workspace")).status, 401);
   const email = `test-${randomUUID()}@example.com`;
   const credentials = {
     email,
@@ -146,9 +144,7 @@ try {
     (await request("/api/auth/logout", { method: "POST", cookie })).status,
     200,
   );
-  assert.deepEqual(await (await request("/api/workspace", { cookie })).json(), {
-    user: null,
-  });
+  assert.equal((await request("/api/workspace", { cookie })).status, 401);
   const login = await request("/api/auth/login", {
     method: "POST",
     body: credentials,

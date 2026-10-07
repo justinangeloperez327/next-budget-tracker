@@ -12,7 +12,6 @@ type Context = {
   logout: () => Promise<void>;
 };
 const BudgetContext = createContext<Context | null>(null);
-const DEMO_KEY = "budget-tracker:v1:demo";
 export function BudgetProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [data, setData] = useState<BudgetData>(emptyData);
@@ -34,21 +33,11 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         if (!response.ok)
           throw Error(result.error || "Your notebook could not be loaded.");
         if (controller.signal.aborted) return;
-        if (result.user) {
-          if (!validData(result.data))
-            throw Error("Saved data could not be read. Reload to try again.");
-          revision.current = result.revision;
-          setEmail(result.user.email);
-          setData(result.data);
-        } else {
-          const raw = localStorage.getItem(DEMO_KEY);
-          const parsed = raw ? JSON.parse(raw) : emptyData;
-          if (!validData(parsed))
-            throw Error(
-              "Your saved demo data could not be read. Refresh the page or clear this site’s data to start fresh.",
-            );
-          setData(parsed);
-        }
+        if (!result.user?.email || !validData(result.data))
+          throw Error("Saved data could not be read. Reload to try again.");
+        revision.current = result.revision;
+        setEmail(result.user.email);
+        setData(result.data);
       } catch (cause) {
         if (controller.signal.aborted) return;
         setError(
@@ -68,19 +57,17 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     busy.current = true;
     setSaving(true);
     try {
-      if (email) {
-        const response = await fetch("/api/workspace", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data: next, revision: revision.current }),
-        });
-        const result = await response.json();
-        if (!response.ok)
-          throw Error(
-            result.error || "Changes could not be saved. Reload to try again.",
-          );
-        revision.current = result.revision;
-      } else localStorage.setItem(DEMO_KEY, JSON.stringify(next));
+      const response = await fetch("/api/workspace", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: next, revision: revision.current }),
+      });
+      const result = await response.json();
+      if (!response.ok)
+        throw Error(
+          result.error || "Changes could not be saved. Reload to try again.",
+        );
+      revision.current = result.revision;
       setData(next);
       return true;
     } catch (cause) {

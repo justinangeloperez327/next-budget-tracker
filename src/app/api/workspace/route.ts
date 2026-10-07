@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 export async function GET() {
   try {
     const user = await currentUser();
-    if (!user) return json({ user: null });
+    if (!user) throw new HttpError(401, "Log in to access your workspace.");
     const snapshot = await db().$transaction(
       (tx) =>
         tx.user.findUniqueOrThrow({
