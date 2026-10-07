@@ -9,7 +9,12 @@ export class HttpError extends Error {
 }
 export function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  if (!origin || origin !== new URL(request.url).origin)
+  const expected = new URL(request.url);
+  // Next.js can construct request.url with its internal hostname. The browser
+  // sends Host for the actual public origin; it cannot override this header.
+  const host = request.headers.get("host");
+  if (host) expected.host = host;
+  if (!origin || origin !== expected.origin)
     throw new HttpError(403, "Request origin is not allowed.");
 }
 export async function readJson(
