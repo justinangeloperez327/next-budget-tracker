@@ -8,7 +8,9 @@ import {
   json,
 } from "@/lib/server/http";
 import { validWorkspace } from "@/lib/workspace-validation";
+
 export const runtime = "nodejs";
+
 export async function GET() {
   try {
     const user = await currentUser();
@@ -17,7 +19,10 @@ export async function GET() {
       (tx) =>
         tx.user.findUniqueOrThrow({
           where: { id: user.id },
-          include: { expenses: true, budgets: true },
+          include: {
+            expenses: true,
+            budgets: { include: { allocations: true } },
+          },
         }),
       { isolationLevel: "RepeatableRead" },
     );
@@ -35,12 +40,26 @@ export async function GET() {
         budgets: Object.fromEntries(
           snapshot.budgets.map((b) => [b.month, Number(b.amount)]),
         ),
+        categoryBudgets: Object.fromEntries(
+          snapshot.budgets
+            .filter((b) => b.allocations.length)
+            .map((b) => [
+              b.month,
+              Object.fromEntries(
+                b.allocations.map((allocation) => [
+                  allocation.category,
+                  Number(allocation.amount),
+                ]),
+              ),
+            ]),
+        ),
       },
     });
   } catch (error) {
     return failure(error);
   }
 }
+
 export async function PUT(request: Request) {
   try {
     sameOrigin(request);
@@ -58,9 +77,11 @@ export async function PUT(request: Request) {
     )
       throw new HttpError(
         400,
-        "Invalid expense or budget data. Maximum 2,000 expenses and 600 monthly budgets.",
+        "Invalid expense or budget data. Maximum 2,000 expenses, 600 budget months, and 4,200 category budgets.",
       );
+
     const data = input.data;
+    const categoryBudgets = data.categoryBudgets ?? {};
     const revision = Number(input.revision);
     await db().$transaction(async (tx) => {
       const updated = await tx.user.updateMany({
@@ -72,8 +93,10 @@ export async function PUT(request: Request) {
           409,
           "Your notebook changed in another tab or device. Reload before editing again.",
         );
+
       await tx.expense.deleteMany({ where: { userId: user.id } });
       await tx.budget.deleteMany({ where: { userId: user.id } });
+
       if (data.expenses.length)
         await tx.expense.createMany({
           data: data.expenses.map((e) => ({
@@ -85,16 +108,41 @@ export async function PUT(request: Request) {
             userId: user.id,
           })),
         });
-      const budgets = Object.entries(data.budgets);
-      if (budgets.length)
+
+      const budgetMonths = [
+        ...new Set([
+          ...Object.keys(data.budgets),
+          ...Object.keys(categoryBudgets),
+        ]),
+      ];
+      if (budgetMonths.length)
         await tx.budget.createMany({
-          data: budgets.map(([month, amount]) => ({
+          data: budgetMonths.map((month) => ({
             month,
-            amount: BigInt(amount),
+            amount: BigInt(data.budgets[month] ?? 0),
             userId: user.id,
           })),
         });
+
+      const allocations = Object.entries(categoryBudgets).flatMap(
+        ([month, categoryAmounts]) =>
+          Object.entries(categoryAmounts).flatMap(([category, amount]) =>
+            amount === undefined
+              ? []
+              : [
+                  {
+                    userId: user.id,
+                    month,
+                    category,
+                    amount: BigInt(amount),
+                  },
+                ],
+          ),
+      );
+      if (allocations.length)
+        await tx.budgetAllocation.createMany({ data: allocations });
     });
+
     return json({ revision: revision + 1 });
   } catch (error) {
     return failure(error);

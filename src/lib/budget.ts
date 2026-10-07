@@ -15,11 +15,45 @@ export type Expense = {
   category: Category;
   date: string;
 };
+export type CategoryBudget = Partial<Record<Category, number>>;
 export type BudgetData = {
   expenses: Expense[];
   budgets: Record<string, number>;
+  categoryBudgets?: Record<string, CategoryBudget>;
 };
-export const emptyData: BudgetData = { expenses: [], budgets: {} };
+export type BudgetVarianceStatus = "saved" | "on-budget" | "overspent";
+export type CategoryBudgetSummary = {
+  category: Category;
+  budget: number;
+  actual: number;
+  variance: number;
+  status: BudgetVarianceStatus;
+};
+
+export const emptyData: BudgetData = {
+  expenses: [],
+  budgets: {},
+  categoryBudgets: {},
+};
+
+function validCategoryBudgets(value: unknown) {
+  if (value === undefined) return true;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  return Object.entries(value).every(
+    ([month, allocations]) =>
+      /^\d{4}-\d{2}$/.test(month) &&
+      !!allocations &&
+      typeof allocations === "object" &&
+      !Array.isArray(allocations) &&
+      Object.entries(allocations).every(
+        ([category, amount]) =>
+          categories.includes(category as Category) &&
+          Number.isSafeInteger(amount) &&
+          Number(amount) >= 0,
+      ),
+  );
+}
+
 export function validData(data: unknown): data is BudgetData {
   if (!data || typeof data !== "object") return false;
   const d = data as BudgetData;
@@ -40,18 +74,54 @@ export function validData(data: unknown): data is BudgetData {
     !Array.isArray(d.budgets) &&
     Object.entries(d.budgets).every(
       ([k, v]) => /^\d{4}-\d{2}$/.test(k) && Number.isSafeInteger(v) && v >= 0,
-    )
+    ) &&
+    validCategoryBudgets(d.categoryBudgets)
   );
 }
+
 export function total(expenses: Expense[]) {
   return expenses.reduce((sum, e) => sum + e.amount, 0);
 }
+
+export function categoryBudgetSummaries(
+  data: BudgetData,
+  month: string,
+): CategoryBudgetSummary[] {
+  const allocations = data.categoryBudgets?.[month] ?? {};
+  const actuals = new Map<Category, number>(
+    categories.map((category) => [category, 0]),
+  );
+
+  for (const expense of data.expenses) {
+    if (!expense.date.startsWith(month)) continue;
+    actuals.set(
+      expense.category,
+      (actuals.get(expense.category) ?? 0) + expense.amount,
+    );
+  }
+
+  return categories.map((category) => {
+    const budget = allocations[category] ?? 0;
+    const actual = actuals.get(category) ?? 0;
+    const variance = budget - actual;
+    return {
+      category,
+      budget,
+      actual,
+      variance,
+      status:
+        variance > 0 ? "saved" : variance < 0 ? "overspent" : "on-budget",
+    };
+  });
+}
+
 export function money(cents: number) {
   return new Intl.NumberFormat("en-AE", {
     style: "currency",
     currency: "AED",
   }).format(cents / 100);
 }
+
 export function csv(expenses: Expense[]) {
   const escape = (s: string) => '"' + s.replaceAll('"', '""') + '"';
   const safe = (s: string) => escape(/^[=+@\-\t\r]/.test(s) ? "'" + s : s);

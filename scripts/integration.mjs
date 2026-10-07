@@ -87,6 +87,7 @@ try {
       },
     ],
     budgets: { "2026-10": 9_500_000_000 },
+    categoryBudgets: { "2026-10": { Food: 8_500_000_000 } },
   };
   assert.equal(
     (
@@ -129,7 +130,7 @@ try {
   assert.deepEqual(
     (await (await request("/api/workspace", { cookie: secondCookie })).json())
       .data,
-    { expenses: [], budgets: {} },
+    { expenses: [], budgets: {}, categoryBudgets: {} },
   );
   assert.equal(
     (
@@ -170,7 +171,7 @@ try {
   assert.deepEqual(
     (await (await request("/api/workspace", { cookie: newCookie })).json())
       .data,
-    { expenses: [], budgets: {} },
+    { expenses: [], budgets: {}, categoryBudgets: {} },
   );
   console.log(
     "PASS: registration, session cookies, login/logout, persistence, isolation, deletion, CSRF and stale-write protection.",
