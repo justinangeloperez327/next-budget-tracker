@@ -113,8 +113,8 @@ export function AuthForm({
             </div>
             {!configured && (
               <p className="text-sm text-muted-foreground">
-                Account access is not configured yet. You can explore the demo
-                below.
+                Account sign-in is temporarily unavailable. You can still explore
+                the demo below.
               </p>
             )}
             <p role="status" className="text-sm">

@@ -180,8 +180,8 @@ export function Expenses() {
           <DialogHeader>
             <DialogTitle>Delete expense?</DialogTitle>
             <DialogDescription>
-              This will remove {deleting?.description} from this device. This
-              action cannot be undone.
+              This will permanently remove {deleting?.description}. This action
+              cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2">

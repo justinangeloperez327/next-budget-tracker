@@ -26,7 +26,7 @@ export async function POST(
     if (!databaseConfigured())
       throw new HttpError(
         503,
-        "Account access is not configured yet. You can explore the demo.",
+        "Account sign-in is temporarily unavailable. You can still explore the demo.",
       );
     const input = await readJson(request);
     const email =

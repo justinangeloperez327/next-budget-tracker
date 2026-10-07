@@ -19,14 +19,13 @@ export default function About() {
         </CardHeader>
         <CardContent className="space-y-3 text-sm leading-6 text-muted-foreground">
           <p>
-            When you log in, expenses and budgets are saved to your account in
-            PostgreSQL and available across devices. Export a CSV whenever you
-            need a copy.
+            When you log in, expenses and budgets are saved securely to your
+            account and available across devices. Export a CSV whenever you need
+            a copy.
           </p>
           <p>
-            The demo is available without an account and stays in this browser.
-            Demo entries are separate from account data and are not
-            automatically imported.
+            The demo is available without an account. Demo entries stay separate
+            from your signed-in account data.
           </p>
         </CardContent>
       </Card>

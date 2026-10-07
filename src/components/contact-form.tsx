@@ -42,7 +42,7 @@ export function ContactForm() {
       </div>
       {!email && (
         <p className="text-sm text-muted-foreground">
-          The contact address has not been configured yet.
+          Contact is temporarily unavailable. Please try again later.
         </p>
       )}
       <Button disabled={!email}>Open email draft</Button>

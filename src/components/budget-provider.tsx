@@ -45,7 +45,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
           const parsed = raw ? JSON.parse(raw) : emptyData;
           if (!validData(parsed))
             throw Error(
-              "The demo's saved data could not be read. Recover your browser storage before resetting it.",
+              "Your saved demo data could not be read. Refresh the page or clear this site’s data to start fresh.",
             );
           setData(parsed);
         }

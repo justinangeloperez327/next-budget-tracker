@@ -56,7 +56,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground md:hidden">
           <span>
             {email ? "Your account" : "Demo workspace"} ·{" "}
-            {email ? "Cloud storage" : "Saved on this device"}
+            {email ? "Synced" : "Demo mode"}
           </span>
           {email ? (
             <Button
@@ -124,7 +124,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
                 aria-hidden="true"
                 className="size-1.5 rounded-full bg-primary"
               />
-              AED · {email ? "Cloud storage" : "Local demo"}
+              AED · {email ? "Synced" : "Demo mode"}
             </span>
           </div>
         </header>

@@ -57,7 +57,7 @@ export function failure(error: unknown) {
     error instanceof Error ? error.name : "UnknownError",
   );
   return Response.json(
-    { error: "The account database is unavailable. Please try again shortly." },
+    { error: "We couldn’t access your account data. Please try again shortly." },
     { status: 503, headers: { "Cache-Control": "no-store" } },
   );
 }
