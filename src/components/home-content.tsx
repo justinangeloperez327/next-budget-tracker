@@ -9,6 +9,7 @@ import {
   Wallet,
   ArrowUpRight,
 } from "lucide-react";
+import { SakuraStamp, SakuraCat } from "@/components/sakura-companion";
 import ShapeHero from "@/components/kokonutui/shape-hero";
 import SpotlightCards from "@/components/kokonutui/spotlight-cards";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,9 @@ export function HomeContent() {
       <ShapeHero className="my-8">
         <div className="grid items-center gap-10 px-6 py-12 sm:p-12 lg:grid-cols-[1.1fr_1fr] lg:py-20">
           <div>
-            <p className="eyebrow mb-5">Less guesswork. More clarity.</p>
+            <div className="mb-5">
+              <SakuraStamp />
+            </div>
             <h1 className="max-w-xl text-4xl font-medium leading-[1.12] tracking-tight sm:text-5xl">
               Make room for
               <br />
@@ -41,11 +44,16 @@ export function HomeContent() {
                 </Link>
               </Button>
             </div>
-            <p className="mt-5 text-xs text-muted-foreground">
-              Try the demo without an account.
-            </p>
+            <div className="mt-6 flex items-center gap-3">
+              <SakuraCat className="w-16" />
+              <p className="text-xs leading-5 text-muted-foreground">
+                Small steps, a calmer month.
+                <br />
+                Try the demo without an account.
+              </p>
+            </div>
           </div>
-          <div className="min-w-0 rounded-xl border bg-white p-6 shadow-[0_12px_48px_-24px_rgba(24,24,27,0.16)] sm:p-8">
+          <div className="min-w-0 rounded-xl border bg-card p-6 shadow-[0_12px_48px_-24px_rgba(24,24,27,0.16)] sm:p-8">
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-medium">
                 Your month, at a glance
@@ -70,9 +78,9 @@ export function HomeContent() {
             </div>
             <div className="mt-6 divide-y border-t text-sm">
               {[
-                ["Groceries", "AED 850", "bg-zinc-100"],
-                ["Transport", "AED 300", "bg-zinc-200"],
-                ["Other expenses", "AED 1,000", "bg-zinc-300"],
+                ["Groceries", "AED 850", "bg-muted"],
+                ["Transport", "AED 300", "bg-primary/20"],
+                ["Other expenses", "AED 1,000", "bg-primary/35"],
               ].map(([label, value, color]) => (
                 <div
                   key={label}
@@ -102,21 +110,21 @@ export function HomeContent() {
             title: "Capture the everyday",
             description:
               "Add expenses, organise categories, and find transactions quickly.",
-            color: "#27272a",
+            color: "var(--primary)",
           },
           {
             icon: Target,
             title: "Give spending a limit",
             description:
               "Set a monthly budget and keep your remaining balance in view.",
-            color: "#52525b",
+            color: "var(--primary)",
           },
           {
             icon: ChartNoAxesCombined,
             title: "See the bigger picture",
             description:
               "Review spending by category and export a CSV backup whenever you need.",
-            color: "#3f3f46",
+            color: "var(--primary)",
           },
         ]}
       />

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { NotebookNote } from "@/components/sakura-companion";
 import { Wallet, Receipt, Target } from "lucide-react";
 import { SpotlightCard } from "@/components/kokonutui/spotlight-cards";
 import { useState } from "react";
@@ -23,7 +24,9 @@ export function Dashboard() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-medium tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-medium tracking-tight">
+            Your monthly notebook
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             A clear view of your monthly spending.
           </p>
@@ -42,39 +45,45 @@ export function Dashboard() {
           }}
         />
       </div>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr_1fr]">
         {[
-          {
-            label: "Monthly budget",
-            value: money(budget),
-            icon: Wallet,
-            color: "#27272a",
-            description: "Your plan for the month",
-          },
-          {
-            label: "Total spent",
-            value: money(spent),
-            icon: Receipt,
-            color: "#3f3f46",
-            description: `${expenses.length} expenses recorded`,
-          },
           {
             label: budget && spent > budget ? "Over budget" : "Remaining",
             value: budget ? money(Math.abs(budget - spent)) : "Set a budget",
             icon: Target,
-            color: budget && spent > budget ? "#b42318" : "#52525b",
+            color:
+              budget && spent > budget
+                ? "var(--destructive)"
+                : "var(--primary)",
             description: budget
               ? spent > budget
                 ? "Review your monthly plan"
                 : "Available within your plan"
               : "Create your monthly plan below",
           },
-        ].map(({ label, value, icon, color, description }) => (
+          {
+            label: "Monthly budget",
+            value: money(budget),
+            icon: Wallet,
+            color: "var(--primary)",
+            description: "Your plan for the month",
+          },
+          {
+            label: "Total spent",
+            value: money(spent),
+            icon: Receipt,
+            color: "var(--muted-foreground)",
+            description: `${expenses.length} expenses recorded`,
+          },
+        ].map(({ label, value, icon, color, description }, index) => (
           <SpotlightCard
             key={label}
+            className={index === 0 ? "notebook-note" : undefined}
             item={{ title: label, description, icon, color }}
           >
-            <p className="break-words text-2xl font-medium tabular-nums tracking-tight">
+            <p
+              className={`break-words font-medium tabular-nums tracking-tight ${index === 0 ? "text-3xl" : "text-2xl"}`}
+            >
               {value}
             </p>
           </SpotlightCard>
@@ -194,9 +203,13 @@ export function Dashboard() {
       </div>
       <div className="mt-4 divide-y rounded-xl border bg-card">
         {expenses.length === 0 ? (
-          <p className="p-5 text-sm text-muted-foreground">
-            Your expenses will appear here.
-          </p>
+          <NotebookNote
+            title="A fresh page for your expenses"
+            className="border-0"
+          >
+            Add your first expense using the button above. Your recent entries
+            will appear here.
+          </NotebookNote>
         ) : (
           expenses
             .toSorted((a, b) => b.date.localeCompare(a.date))

@@ -1,4 +1,5 @@
 "use client";
+import { NotebookNote } from "@/components/sakura-companion";
 import { useState } from "react";
 import { useBudget } from "@/components/budget-provider";
 import { categories, money, total, csv, type Expense } from "@/lib/budget";
@@ -121,9 +122,16 @@ export function Expenses() {
                   colSpan={5}
                   className="h-32 text-center text-muted-foreground"
                 >
-                  {data.expenses.length
-                    ? "No expenses match your filters."
-                    : "No expenses yet. Add your first expense to get started."}
+                  {data.expenses.length ? (
+                    "No expenses match your filters."
+                  ) : (
+                    <NotebookNote
+                      title="Your notebook is ready"
+                      className="mx-auto max-w-md text-left"
+                    >
+                      Add your first expense to start a clearer spending habit.
+                    </NotebookNote>
+                  )}
                 </TableCell>
               </TableRow>
             ) : (

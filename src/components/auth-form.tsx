@@ -1,4 +1,5 @@
 "use client";
+import { SakuraCat } from "@/components/sakura-companion";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -48,6 +49,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
   }
   return (
     <section className="mx-auto max-w-md py-12 sm:py-16">
+      <SakuraCat className="mx-auto mb-3 w-20" />
       <p className="eyebrow mb-5 text-center">Your money. A clearer picture.</p>
       <Card className="shadow-[0_8px_32px_-20px_rgba(24,24,27,0.12)]">
         <CardHeader>

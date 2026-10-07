@@ -91,7 +91,7 @@ export default function ShapeHero({
   return (
     <section
       className={cn(
-        "relative isolate overflow-hidden rounded-xl border bg-white",
+        "relative isolate overflow-hidden rounded-xl border notebook-paper",
         className,
       )}
     >
@@ -101,14 +101,14 @@ export default function ShapeHero({
       >
         <ElegantShape
           className="-top-40 -right-20"
-          gradient="from-zinc-500/15"
+          gradient="from-primary/15"
           width={350}
           height={400}
           rotate={-12}
         />
         <ElegantShape
           className="-bottom-40 -left-20"
-          gradient="from-zinc-400/10"
+          gradient="from-primary/10"
           width={400}
           height={300}
           rotate={20}

@@ -8,6 +8,8 @@ import {
   ArrowUpRight,
   HardDrive,
 } from "lucide-react";
+import { ThemeControls } from "@/components/theme-controls";
+import { SakuraCat } from "@/components/sakura-companion";
 import { Brand } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { useBudget } from "@/components/budget-provider";
@@ -16,9 +18,17 @@ export function Workspace({ children }: { children: React.ReactNode }) {
   const { ready, email, error, logout } = useBudget();
   return (
     <div className="min-h-screen md:grid md:grid-cols-[240px_minmax(0,1fr)]">
-      <aside className="flex flex-col border-b bg-white p-5 md:sticky md:top-0 md:h-screen md:border-r md:border-b-0">
+      <aside className="flex flex-col border-b bg-card p-5 md:sticky md:top-0 md:h-screen md:border-r md:border-b-0">
         <Brand />
-        <p className="eyebrow mt-9 hidden md:block">Workspace</p>
+        <div className="notebook-note mt-6 hidden items-center gap-3 rounded-lg border p-3 md:flex">
+          <SakuraCat className="w-12" />
+          <p className="text-xs leading-5 text-muted-foreground">
+            A little care for
+            <br />
+            your everyday spending.
+          </p>
+        </div>
+        <p className="eyebrow mt-6 hidden md:block">Workspace</p>
         <nav
           aria-label="Workspace navigation"
           className="mt-4 flex flex-wrap gap-2 md:flex-col"
@@ -35,7 +45,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
                 key={String(href)}
                 href={String(href)}
                 aria-current={pathname === href ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${pathname === href ? "bg-zinc-100 font-medium text-primary" : "text-muted-foreground hover:bg-muted"}`}
+                className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${pathname === href ? "bg-muted font-medium text-primary" : "text-muted-foreground hover:bg-muted"}`}
               >
                 <NavIcon size={18} />
                 {String(label)}
@@ -43,7 +53,21 @@ export function Workspace({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="mt-6 space-y-4 border-t pt-5 text-sm md:mt-auto">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground md:hidden">
+          <span>
+            {email ? "Your account" : "Demo workspace"} · Saved on this device
+          </span>
+          {email ? (
+            <Button variant="ghost" size="sm" onClick={logout}>
+              Sign out
+            </Button>
+          ) : (
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/login">Log in</Link>
+            </Button>
+          )}
+        </div>
+        <div className="mt-6 hidden space-y-4 border-t pt-5 text-sm md:mt-auto md:block">
           <div className="flex items-start gap-3">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted font-medium text-primary">
               {email ? email[0].toUpperCase() : "D"}
@@ -76,17 +100,20 @@ export function Workspace({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
       <div className="min-w-0">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-white px-6 py-4 text-xs text-muted-foreground">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-card px-6 py-4 text-xs text-muted-foreground">
           <span>
             Workspace / {pathname === "/expenses" ? "Expenses" : "Overview"}
           </span>
-          <span className="flex items-center gap-2">
-            <span
-              aria-hidden="true"
-              className="size-1.5 rounded-full bg-primary"
-            />
-            AED · Local storage
-          </span>
+          <div className="flex items-center gap-3">
+            <ThemeControls />
+            <span className="hidden items-center gap-2 sm:flex">
+              <span
+                aria-hidden="true"
+                className="size-1.5 rounded-full bg-primary"
+              />
+              AED · Local storage
+            </span>
+          </div>
         </header>
         <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:p-10">
           {error && (

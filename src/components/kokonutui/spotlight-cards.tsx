@@ -41,12 +41,14 @@ export interface SpotlightItem {
 
 interface CardProps {
   children?: React.ReactNode;
+  className?: string;
   item: SpotlightItem;
 }
 
 export function SpotlightCard({
   item,
   children,
+  className,
 }: Partial<Omit<CardProps, "item">> & Pick<CardProps, "item">) {
   const reducedMotion = useReducedMotion();
   const Icon = item.icon;
@@ -91,11 +93,12 @@ export function SpotlightCard({
       className={cn(
         "group relative flex flex-col gap-5 overflow-hidden rounded-xl border p-6",
         // Light
-        "border-zinc-200 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
+        "border-border bg-card shadow-[0_2px_8px_rgba(0,0,0,0.025)]",
         // Dark
-        "dark:border-white/6 dark:bg-white/3 dark:shadow-none",
+        "dark:shadow-none",
         "transition-[border-color] duration-300",
-        "hover:border-zinc-300 dark:hover:border-white/14",
+        "hover:border-primary/40",
+        className,
       )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -113,7 +116,7 @@ export function SpotlightCard({
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 rounded-2xl"
         style={{
-          background: `radial-gradient(ellipse at 20% 20%, ${item.color}14, transparent 65%)`,
+          background: `radial-gradient(ellipse at 20% 20%, color-mix(in srgb, ${item.color} 7%, transparent), transparent 65%)`,
         }}
       />
 
@@ -122,8 +125,8 @@ export function SpotlightCard({
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 rounded-2xl"
         style={{
-          opacity: glowOpacity,
-          background: `radial-gradient(ellipse at 20% 20%, ${item.color}2e, transparent 65%)`,
+          opacity: reducedMotion ? 0 : glowOpacity,
+          background: `radial-gradient(ellipse at 20% 20%, color-mix(in srgb, ${item.color} 12%, transparent), transparent 65%)`,
         }}
       />
 
@@ -137,8 +140,8 @@ export function SpotlightCard({
       <div
         className="relative z-10 flex h-10 w-10 items-center justify-center rounded-xl"
         style={{
-          background: `${item.color}18`,
-          boxShadow: `inset 0 0 0 1px ${item.color}30`,
+          background: `color-mix(in srgb, ${item.color} 12%, transparent)`,
+          boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${item.color} 18%, transparent)`,
         }}
       >
         <Icon size={17} strokeWidth={1.9} style={{ color: item.color }} />
@@ -146,10 +149,10 @@ export function SpotlightCard({
 
       {/* Text */}
       <div className="relative z-10 flex flex-col gap-2">
-        <h3 className="font-medium text-sm text-zinc-900 tracking-tight dark:text-white">
+        <h3 className="font-medium text-sm text-foreground tracking-tight">
           {item.title}
         </h3>
-        <p className="text-sm text-muted-foreground leading-relaxed dark:text-white/40">
+        <p className="text-sm text-muted-foreground leading-relaxed">
           {item.description}
         </p>
       </div>
@@ -161,7 +164,7 @@ export function SpotlightCard({
         aria-hidden="true"
         className="absolute bottom-0 left-0 h-[2px] w-0 rounded-full transition-all duration-500 group-hover:w-full"
         style={{
-          background: `linear-gradient(to right, ${item.color}80, transparent)`,
+          background: `linear-gradient(to right, color-mix(in srgb, ${item.color} 50%, transparent), transparent)`,
         }}
       />
     </motion.div>
@@ -189,7 +192,7 @@ export default function SpotlightCards({
     <div
       className={cn(
         "relative w-full overflow-hidden rounded-2xl px-8 pt-9 pb-10",
-        "bg-white dark:bg-[#06060f]",
+        "bg-card",
         className,
       )}
     >
@@ -199,17 +202,17 @@ export default function SpotlightCards({
         className="pointer-events-none absolute inset-0 dark:hidden"
         style={{
           backgroundImage:
-            "radial-gradient(circle, rgba(0,0,0,0.055) 1px, transparent 1px)",
+            "radial-gradient(circle, var(--notebook-line) 1px, transparent 1px)",
           backgroundSize: "22px 22px",
         }}
       />
 
       {/* Header */}
       <div className="relative mb-8 flex flex-col gap-1.5">
-        <p className="font-semibold text-[10px] text-zinc-600 uppercase tracking-[0.22em] dark:text-zinc-400">
+        <p className="font-semibold text-[10px] text-primary uppercase tracking-[0.22em]">
           {eyebrow}
         </p>
-        <h2 className="font-semibold text-[22px] text-zinc-900 tracking-tight dark:text-white">
+        <h2 className="font-semibold text-[22px] text-foreground tracking-tight">
           {heading}
         </h2>
       </div>

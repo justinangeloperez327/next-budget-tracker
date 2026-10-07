@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Wallet, ArrowUpRight } from "lucide-react";
+import { Flower2, ArrowUpRight } from "lucide-react";
+import { ThemeControls } from "@/components/theme-controls";
 import { Button } from "@/components/ui/button";
 export function Brand() {
   return (
@@ -9,8 +10,8 @@ export function Brand() {
       href="/"
       className="inline-flex items-center gap-2.5 font-medium tracking-tight"
     >
-      <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-white">
-        <Wallet size={17} aria-hidden="true" />
+      <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <Flower2 size={17} aria-hidden="true" />
       </span>
       Budget Tracker
     </Link>
@@ -19,7 +20,7 @@ export function Brand() {
 export function SiteHeader() {
   const pathname = usePathname();
   return (
-    <header className="border-b bg-white">
+    <header className="border-b bg-card">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
         <Brand />
         <nav
@@ -45,6 +46,7 @@ export function SiteHeader() {
               Get started <ArrowUpRight />
             </Link>
           </Button>
+          <ThemeControls />
         </nav>
       </div>
     </header>

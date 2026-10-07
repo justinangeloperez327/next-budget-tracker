@@ -9,7 +9,7 @@ export function ContactForm() {
   const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
   return (
     <form
-      className="mt-8 space-y-5"
+      className="mt-8 space-y-5 rounded-xl border bg-card p-6"
       onSubmit={(e) => {
         e.preventDefault();
         if (!email) return;

@@ -62,4 +62,8 @@ npx shadcn@latest add @kokonutui/spotlight-cards
 
 Local adaptations live in `src/components/kokonutui`; review changes before overwriting them with registry updates.
 
-The app uses a Kokonut-style neutral palette: white surfaces, zinc text and borders, and charcoal primary actions. Decorative hero and spotlight colors stay monochrome; destructive and over-budget indicators retain red for clarity.
+## Sakura notebook appearance
+
+Cream paper surfaces, muted sakura accents, light ruled lines, and a small SVG cat companion give the app a stationery-inspired style. Dark mode uses warm charcoal surfaces and dusty pink accents. Financial figures remain prominent; the dashboard leads with the available balance and keeps over-budget feedback neutral in tone.
+
+Light, Dark, and System controls are available in public navigation and the workspace header. Appearance is remembered separately from expense data with `next-themes`; System follows OS changes. Theme styles use semantic tokens across tables, forms, dialogs, and Kokonut components. Reduced-motion preferences disable decorative movement. Illustrations are decorative and hidden from screen readers.
