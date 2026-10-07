@@ -67,7 +67,7 @@ export function Expenses() {
           <ExpenseEditor />
         </div>
       </div>
-      <div className="my-6 grid gap-4 sm:grid-cols-3">
+      <div className="my-6 grid gap-4 rounded-xl border bg-card p-5 sm:grid-cols-3">
         <div className="space-y-2">
           <Label htmlFor="search">Search expenses</Label>
           <Input
@@ -103,7 +103,7 @@ export function Expenses() {
       <p className="mb-4 text-sm text-muted-foreground">
         {filtered.length} expenses · {money(total(filtered))}
       </p>
-      <div className="rounded-lg border">
+      <div className="overflow-hidden rounded-xl border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -132,9 +132,13 @@ export function Expenses() {
                   <TableCell className="max-w-60 whitespace-normal">
                     {e.description}
                   </TableCell>
-                  <TableCell>{e.category}</TableCell>
+                  <TableCell>
+                    <span className="rounded-md bg-muted px-2 py-1 text-xs">
+                      {e.category}
+                    </span>
+                  </TableCell>
                   <TableCell>{e.date}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right font-medium tabular-nums">
                     {money(e.amount)}
                   </TableCell>
                   <TableCell>
@@ -142,6 +146,7 @@ export function Expenses() {
                       <ExpenseEditor expense={e} />
                       <Button
                         variant="ghost"
+                        className="text-destructive"
                         size="sm"
                         disabled={!!error}
                         onClick={() => setDeleting(e)}

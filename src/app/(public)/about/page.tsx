@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function About() {
   return (
     <section className="mx-auto max-w-2xl py-16">
-      <p className="text-sm text-muted-foreground">About Budget Tracker</p>
+      <p className="eyebrow">About Budget Tracker</p>
       <h1 className="mt-3 text-3xl font-medium tracking-tight">
         A little clarity, every day.
       </h1>

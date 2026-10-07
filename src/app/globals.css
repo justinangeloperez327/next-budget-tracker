@@ -26,16 +26,16 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: #f8f9fc;
+  --foreground: #202330;
   --card: oklch(1 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: #4f46e5;
   --primary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --border: oklch(0.922 0 0);
+  --muted: #eef0f6;
+  --muted-foreground: #606575;
+  --border: #e2e5ee;
   --destructive: oklch(0.577 0.245 27.325);
-  --ring: oklch(0.708 0 0);
+  --ring: #4f46e5;
   --radius: 0.5rem;
 }
 @layer base {
@@ -52,5 +52,34 @@
   select,
   textarea {
     touch-action: manipulation;
+  }
+}
+
+@layer base {
+  a:focus-visible,
+  select:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+  input,
+  select,
+  textarea {
+    font-variant-numeric: tabular-nums;
+  }
+  select {
+    min-height: 44px;
+  }
+}
+@layer components {
+  .eyebrow {
+    @apply text-xs font-medium text-primary;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition-duration: 0s !important;
   }
 }

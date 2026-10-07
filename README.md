@@ -49,3 +49,15 @@ GitHub Actions runs these checks on main pushes and pull requests. Deploy to Ver
 ## Components
 
 shadcn/ui New York component sources were retrieved from the official `shadcn-ui/ui` repository because the CLI registry was unavailable. `components.json` supports future CLI component additions. Component source is MIT licensed; see `THIRD_PARTY_NOTICES.md`.
+
+## Kokonut UI
+
+The homepage uses Kokonut UI Shape Hero and Spotlight Cards. Dashboard summary cards reuse Spotlight Cards with real monthly data. Sources are adapted from `kokonut-labs/kokonutui`, with MIT attribution in `THIRD_PARTY_NOTICES.md`. Shapes are static, card tilt respects reduced motion, and marketing examples are labelled separately from actual expenses. shadcn/ui continues to provide accessible buttons, forms, tables, and dialogs.
+
+The `@kokonutui` registry is configured in `components.json` for future additions:
+
+```sh
+npx shadcn@latest add @kokonutui/spotlight-cards
+```
+
+Local adaptations live in `src/components/kokonutui`; review changes before overwriting them with registry updates.

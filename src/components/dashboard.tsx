@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { Wallet, Receipt, Target } from "lucide-react";
+import { SpotlightCard } from "@/components/kokonutui/spotlight-cards";
 import { useState } from "react";
 import { useBudget } from "@/components/budget-provider";
 import { categories, money, total } from "@/lib/budget";
@@ -42,23 +44,40 @@ export function Dashboard() {
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         {[
-          ["Monthly budget", money(budget)],
-          ["Total spent", money(spent)],
-          [
-            budget && spent > budget ? "Over budget" : "Remaining",
-            budget ? money(Math.abs(budget - spent)) : "Set a budget",
-          ],
-        ].map(([label, value]) => (
-          <Card key={label}>
-            <CardHeader>
-              <CardTitle className="text-sm font-normal text-muted-foreground">
-                {label}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-2xl font-medium tracking-tight">
+          {
+            label: "Monthly budget",
+            value: money(budget),
+            icon: Wallet,
+            color: "#4f46e5",
+            description: "Your plan for the month",
+          },
+          {
+            label: "Total spent",
+            value: money(spent),
+            icon: Receipt,
+            color: "#9a6410",
+            description: `${expenses.length} expenses recorded`,
+          },
+          {
+            label: budget && spent > budget ? "Over budget" : "Remaining",
+            value: budget ? money(Math.abs(budget - spent)) : "Set a budget",
+            icon: Target,
+            color: budget && spent > budget ? "#b42318" : "#0f766e",
+            description: budget
+              ? spent > budget
+                ? "Review your monthly plan"
+                : "Available within your plan"
+              : "Create your monthly plan below",
+          },
+        ].map(({ label, value, icon, color, description }) => (
+          <SpotlightCard
+            key={label}
+            item={{ title: label, description, icon, color }}
+          >
+            <p className="break-words text-2xl font-medium tabular-nums tracking-tight">
               {value}
-            </CardContent>
-          </Card>
+            </p>
+          </SpotlightCard>
         ))}
       </div>
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -173,7 +192,7 @@ export function Dashboard() {
           View all
         </Link>
       </div>
-      <div className="mt-4 divide-y rounded-lg border">
+      <div className="mt-4 divide-y rounded-xl border bg-card">
         {expenses.length === 0 ? (
           <p className="p-5 text-sm text-muted-foreground">
             Your expenses will appear here.
@@ -193,7 +212,9 @@ export function Dashboard() {
                     {e.category} · {e.date}
                   </p>
                 </div>
-                <span>{money(e.amount)}</span>
+                <span className="shrink-0 font-medium tabular-nums">
+                  {money(e.amount)}
+                </span>
               </div>
             ))
         )}

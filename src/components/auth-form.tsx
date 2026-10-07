@@ -47,8 +47,9 @@ export function AuthForm({ register = false }: { register?: boolean }) {
     }
   }
   return (
-    <section className="mx-auto max-w-md py-16">
-      <Card>
+    <section className="mx-auto max-w-md py-12 sm:py-16">
+      <p className="eyebrow mb-5 text-center">Your money. A clearer picture.</p>
+      <Card className="shadow-[0_8px_32px_-20px_rgba(79,70,229,0.2)]">
         <CardHeader>
           <CardTitle className="text-2xl font-medium">
             {register ? "Create your account" : "Welcome back"}
