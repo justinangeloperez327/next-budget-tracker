@@ -50,6 +50,13 @@ export type SssContributionSummary = {
   notRequiredMonths: number;
 };
 
+export type SssContributionHistoryMonth = {
+  period: string;
+  month: number;
+  status: ContributionStatus | "No record";
+  contribution?: GovernmentContribution;
+};
+
 const MONTH_PATTERN = /^(19|20|21)\d{2}-(0[1-9]|1[0-2])$/;
 const DATE_PATTERN = /^(19|20|21)\d{2}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/;
 
@@ -143,6 +150,50 @@ export function sssContributionSummary(
       (contribution) => contribution.status === "Not Required",
     ).length,
   };
+}
+
+export function sssContributionYears(
+  account: GovernmentAccount | undefined,
+  contributions: GovernmentContribution[],
+  currentYear = new Date().getFullYear(),
+) {
+  const years = account
+    ? contributions
+        .filter((contribution) => contribution.accountId === account.id)
+        .map((contribution) => Number(contribution.period.slice(0, 4)))
+        .filter(Number.isInteger)
+    : [];
+
+  return [...new Set([currentYear, ...years])].toSorted((a, b) => b - a);
+}
+
+export function sssContributionYearHistory(
+  account: GovernmentAccount | undefined,
+  contributions: GovernmentContribution[],
+  year: number,
+): SssContributionHistoryMonth[] {
+  const records = new Map(
+    (account
+      ? contributions.filter(
+          (contribution) =>
+            contribution.accountId === account.id &&
+            contribution.period.startsWith(String(year)),
+        )
+      : []
+    ).map((contribution) => [contribution.period, contribution]),
+  );
+
+  return Array.from({ length: 12 }, (_, index) => {
+    const month = index + 1;
+    const period = `${year}-${String(month).padStart(2, "0")}`;
+    const contribution = records.get(period);
+    return {
+      period,
+      month,
+      status: contribution?.status ?? "No record",
+      ...(contribution ? { contribution } : {}),
+    };
+  });
 }
 
 export function phpMoney(centavos: number) {

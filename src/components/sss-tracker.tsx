@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useBudget } from "@/components/budget-provider";
 import {
@@ -376,6 +377,12 @@ export function SssTracker() {
           Official rate calculations are intentionally not applied in this
           foundation.
         </p>
+        <Link
+          href="/sss/history"
+          className="mt-3 inline-block text-sm underline underline-offset-4"
+        >
+          View full contribution history
+        </Link>
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

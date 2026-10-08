@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   phpMoney,
   sssContributionSummary,
+  sssContributionYearHistory,
+  sssContributionYears,
   validGovernmentData,
   type GovernmentAccount,
   type GovernmentContribution,
@@ -71,6 +73,32 @@ test("SSS summary counts paid, pending, and missed records", () => {
     missedMonths: 1,
     notRequiredMonths: 0,
   });
+});
+
+test("SSS history builds a complete 12-month year without inventing missed records", () => {
+  const history = sssContributionYearHistory(account, contributions, 2026);
+
+  assert.equal(history.length, 12);
+  assert.equal(history[0].period, "2026-01");
+  assert.equal(history[0].status, "Paid");
+  assert.equal(history[1].status, "Pending");
+  assert.equal(history[2].status, "Missed");
+  assert.equal(history[3].status, "No record");
+  assert.equal(history[3].contribution, undefined);
+  assert.equal(history[11].period, "2026-12");
+});
+
+test("SSS history year options include current and recorded years", () => {
+  const older: GovernmentContribution = {
+    ...contributions[0],
+    id: "77777777-7777-4777-8777-777777777777",
+    period: "2024-12",
+  };
+
+  assert.deepEqual(
+    sssContributionYears(account, [...contributions, older], 2026),
+    [2026, 2024],
+  );
 });
 
 test("workspace validates contribution ownership and paid dates", () => {
