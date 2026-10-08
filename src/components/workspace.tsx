@@ -1,15 +1,29 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Receipt, LogOut, HardDrive } from "lucide-react";
+import {
+  LayoutDashboard,
+  Receipt,
+  LogOut,
+  HardDrive,
+  Target,
+} from "lucide-react";
 import { ThemeControls } from "@/components/theme-controls";
 import { SakuraCat } from "@/components/sakura-companion";
 import { Brand } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { useBudget } from "@/components/budget-provider";
+
 export function Workspace({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { ready, email, error, saving, logout } = useBudget();
+  const section =
+    pathname === "/expenses"
+      ? "Expenses"
+      : pathname === "/budget"
+        ? "Budget"
+        : "Overview";
+
   return (
     <div className="min-h-screen md:grid md:grid-cols-[240px_minmax(0,1fr)]">
       <aside className="flex flex-col border-b bg-card p-5 md:sticky md:top-0 md:h-screen md:border-r md:border-b-0">
@@ -30,6 +44,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
           {(
             [
               ["/dashboard", "Dashboard", LayoutDashboard],
+              ["/budget", "Budget vs. actual", Target],
               ["/expenses", "Expense tracker", Receipt],
             ] as const
           ).map(([href, label, Icon]) => (
@@ -37,7 +52,11 @@ export function Workspace({ children }: { children: React.ReactNode }) {
               key={href}
               href={href}
               aria-current={pathname === href ? "page" : undefined}
-              className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${pathname === href ? "bg-muted font-medium text-primary" : "text-muted-foreground hover:bg-muted"}`}
+              className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
+                pathname === href
+                  ? "bg-muted font-medium text-primary"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
             >
               <Icon size={18} />
               {label}
@@ -85,9 +104,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
       </aside>
       <div className="min-w-0">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-card px-6 py-4 text-xs text-muted-foreground">
-          <span>
-            Workspace / {pathname === "/expenses" ? "Expenses" : "Overview"}
-          </span>
+          <span>Workspace / {section}</span>
           <div className="flex items-center gap-3">
             <ThemeControls />
             <span className="hidden items-center gap-2 sm:flex">
