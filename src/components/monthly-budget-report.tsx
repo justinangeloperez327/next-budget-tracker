@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useBudget } from "@/components/budget-provider";
 import { money, monthlyBudgetReport } from "@/lib/budget";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,7 +60,14 @@ export function MonthlyBudgetReportView() {
             selected month.
           </p>
         </div>
-        <div className="space-y-2">
+        <div className="flex items-end gap-3">
+          <Link
+            href="/reports/history"
+            className="mb-0.5 hidden rounded-md border px-3 py-2 text-sm sm:inline-block"
+          >
+            View history
+          </Link>
+          <div className="space-y-2">
           <Label htmlFor="report-month">Month</Label>
           <Input
             id="report-month"
@@ -70,6 +78,7 @@ export function MonthlyBudgetReportView() {
               if (event.target.value) setMonth(event.target.value);
             }}
           />
+          </div>
         </div>
       </div>
 

@@ -45,6 +45,31 @@ export type MonthlyBudgetReport = {
   categorySummaries: CategoryBudgetSummary[];
 };
 
+export type HistoricalCategoryPerformance = {
+  category: Category;
+  budget: number;
+  actual: number;
+  variance: number;
+  activeMonths: number;
+  savedMonths: number;
+  overspentMonths: number;
+};
+
+export type HistoricalBudgetAnalysis = {
+  months: string[];
+  reports: MonthlyBudgetReport[];
+  totalBudget: number;
+  totalActual: number;
+  netVariance: number;
+  totalSaved: number;
+  totalOverspent: number;
+  averageSavingsRate: number;
+  savedMonths: number;
+  overspentMonths: number;
+  onBudgetMonths: number;
+  categoryPerformance: HistoricalCategoryPerformance[];
+};
+
 export const emptyData: BudgetData = {
   expenses: [],
   budgets: {},
@@ -169,6 +194,84 @@ export function monthlyBudgetReport(
     categorySaved,
     categoryOverspent,
     categorySummaries,
+  };
+}
+
+export function budgetHistoryMonths(data: BudgetData) {
+  return [
+    ...new Set([
+      ...Object.keys(data.budgets),
+      ...Object.keys(data.categoryBudgets ?? {}),
+      ...data.expenses.map((expense) => expense.date.slice(0, 7)),
+    ]),
+  ].toSorted();
+}
+
+export function historicalBudgetAnalysis(
+  data: BudgetData,
+  months: string[] = budgetHistoryMonths(data),
+): HistoricalBudgetAnalysis {
+  const uniqueMonths = [...new Set(months)].toSorted();
+  const reports = uniqueMonths.map((month) => monthlyBudgetReport(data, month));
+  const totalBudget = reports.reduce((sum, report) => sum + report.budget, 0);
+  const totalActual = reports.reduce((sum, report) => sum + report.actual, 0);
+  const totalSaved = reports.reduce((sum, report) => sum + report.saved, 0);
+  const totalOverspent = reports.reduce(
+    (sum, report) => sum + report.overspent,
+    0,
+  );
+  const budgetedReports = reports.filter((report) => report.budget > 0);
+
+  const categoryPerformance = categories.map((category) => {
+    const entries = reports
+      .map((report) =>
+        report.categorySummaries.find((entry) => entry.category === category),
+      )
+      .filter(
+        (entry): entry is CategoryBudgetSummary =>
+          !!entry && (entry.budget > 0 || entry.actual > 0),
+      );
+
+    const budget = entries.reduce((sum, entry) => sum + entry.budget, 0);
+    const actual = entries.reduce((sum, entry) => sum + entry.actual, 0);
+
+    return {
+      category,
+      budget,
+      actual,
+      variance: budget - actual,
+      activeMonths: entries.length,
+      savedMonths: entries.filter((entry) => entry.status === "saved").length,
+      overspentMonths: entries.filter((entry) => entry.status === "overspent")
+        .length,
+    };
+  });
+
+  return {
+    months: uniqueMonths,
+    reports,
+    totalBudget,
+    totalActual,
+    netVariance: totalBudget - totalActual,
+    totalSaved,
+    totalOverspent,
+    averageSavingsRate:
+      budgetedReports.length > 0
+        ? budgetedReports.reduce(
+            (sum, report) => sum + report.savingsRate,
+            0,
+          ) / budgetedReports.length
+        : 0,
+    savedMonths: reports.filter(
+      (report) => report.budget > 0 && report.variance > 0,
+    ).length,
+    overspentMonths: reports.filter(
+      (report) => report.budget > 0 && report.variance < 0,
+    ).length,
+    onBudgetMonths: reports.filter(
+      (report) => report.budget > 0 && report.variance === 0,
+    ).length,
+    categoryPerformance,
   };
 }
 

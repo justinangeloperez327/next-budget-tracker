@@ -23,7 +23,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
       ? "Expenses"
       : pathname === "/budget"
         ? "Budget"
-        : pathname === "/reports"
+        : pathname.startsWith("/reports")
           ? "Reports"
           : "Overview";
 
@@ -55,9 +55,17 @@ export function Workspace({ children }: { children: React.ReactNode }) {
             <Link
               key={href}
               href={href}
-              aria-current={pathname === href ? "page" : undefined}
+              aria-current={
+                href === "/reports"
+                  ? pathname.startsWith("/reports")
+                    ? "page"
+                    : undefined
+                  : pathname === href
+                    ? "page"
+                    : undefined
+              }
               className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
-                pathname === href
+                href === "/reports" ? pathname.startsWith("/reports") : pathname === href
                   ? "bg-muted font-medium text-primary"
                   : "text-muted-foreground hover:bg-muted"
               }`}

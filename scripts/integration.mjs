@@ -75,6 +75,7 @@ try {
   const cookie = setCookie.split(";")[0];
   assert.equal((await request("/budget", { cookie })).status, 200);
   assert.equal((await request("/reports", { cookie })).status, 200);
+  assert.equal((await request("/reports/history", { cookie })).status, 200);
   const initial = await (await request("/api/workspace", { cookie })).json();
   assert.equal(initial.user.email, email);
   assert.equal(initial.revision, 0);

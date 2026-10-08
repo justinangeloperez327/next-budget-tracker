@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  budgetHistoryMonths,
   categoryBudgetSummaries,
+  historicalBudgetAnalysis,
   monthlyBudgetReport,
   total,
   validData,
@@ -155,6 +157,90 @@ test("monthly report records an over-budget month without negative savings", () 
   assert.equal(report.overspent, 2000);
   assert.equal(report.savingsRate, 0);
   assert.equal(report.budgetUsedRate, 120);
+});
+
+test("history includes budget, category-only, and expense-only months", () => {
+  const data: BudgetData = {
+    expenses: [
+      { ...example, id: "sep", date: "2026-09-12" },
+      { ...example, id: "nov", date: "2026-11-01" },
+    ],
+    budgets: { "2026-08": 10000 },
+    categoryBudgets: { "2026-10": { Food: 5000 } },
+  };
+
+  assert.deepEqual(budgetHistoryMonths(data), [
+    "2026-08",
+    "2026-09",
+    "2026-10",
+    "2026-11",
+  ]);
+});
+
+test("historical analysis aggregates monthly and category trends", () => {
+  const data: BudgetData = {
+    expenses: [
+      { ...example, id: "sep-food", date: "2026-09-05", amount: 6000 },
+      {
+        ...example,
+        id: "sep-home",
+        date: "2026-09-10",
+        amount: 9000,
+        category: "Housing",
+      },
+      { ...example, id: "oct-food", date: "2026-10-05", amount: 4000 },
+      {
+        ...example,
+        id: "oct-home",
+        date: "2026-10-10",
+        amount: 12000,
+        category: "Housing",
+      },
+    ],
+    budgets: { "2026-09": 20000, "2026-10": 15000 },
+    categoryBudgets: {
+      "2026-09": { Food: 5000, Housing: 10000 },
+      "2026-10": { Food: 5000, Housing: 10000 },
+    },
+  };
+
+  const analysis = historicalBudgetAnalysis(data);
+
+  assert.deepEqual(analysis.months, ["2026-09", "2026-10"]);
+  assert.equal(analysis.totalBudget, 35000);
+  assert.equal(analysis.totalActual, 31000);
+  assert.equal(analysis.netVariance, 4000);
+  assert.equal(analysis.totalSaved, 5000);
+  assert.equal(analysis.totalOverspent, 1000);
+  assert.equal(analysis.savedMonths, 1);
+  assert.equal(analysis.overspentMonths, 1);
+  assert.equal(analysis.onBudgetMonths, 0);
+
+  const food = analysis.categoryPerformance.find(
+    (entry) => entry.category === "Food",
+  );
+  const housing = analysis.categoryPerformance.find(
+    (entry) => entry.category === "Housing",
+  );
+
+  assert.deepEqual(food, {
+    category: "Food",
+    budget: 10000,
+    actual: 10000,
+    variance: 0,
+    activeMonths: 2,
+    savedMonths: 1,
+    overspentMonths: 1,
+  });
+  assert.deepEqual(housing, {
+    category: "Housing",
+    budget: 20000,
+    actual: 21000,
+    variance: -1000,
+    activeMonths: 2,
+    savedMonths: 1,
+    overspentMonths: 1,
+  });
 });
 
 test("CSV quotes values and neutralises spreadsheet formulas", () => {
