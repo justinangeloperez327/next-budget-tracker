@@ -81,6 +81,8 @@ try {
   assert.equal((await request("/contributions", { cookie })).status, 200);
   assert.equal((await request("/philhealth", { cookie })).status, 200);
   assert.equal((await request("/philhealth/history", { cookie })).status, 200);
+  assert.equal((await request("/pagibig", { cookie })).status, 200);
+  assert.equal((await request("/pagibig/history", { cookie })).status, 200);
   const initial = await (await request("/api/workspace", { cookie })).json();
   assert.equal(initial.user.email, email);
   assert.equal(initial.revision, 0);
@@ -121,7 +123,7 @@ try {
       {
         id: pagIbigAccountId,
         provider: "PAGIBIG",
-        memberType: "Mandatory",
+        memberType: "Mandatory - OFW",
         accountIdentifier: "MID-TEST-001",
         monthlyTarget: 20000,
         frequency: "Monthly",

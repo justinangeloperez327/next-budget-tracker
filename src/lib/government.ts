@@ -26,6 +26,24 @@ export const philHealthMemberTypes = [
 ] as const;
 export type PhilHealthMemberType = (typeof philHealthMemberTypes)[number];
 
+export const pagIbigMemberTypes = [
+  "Mandatory - Employed",
+  "Mandatory - Self-Employed",
+  "Mandatory - OFW",
+  "Mandatory - Employee of Foreign Government",
+  "Mandatory - Barangay Official / Employee",
+  "Voluntary - Employed",
+  "Voluntary - Individual Payor",
+  "Voluntary - Member of Cooperative",
+  "Voluntary - Member of Trade Union",
+  "Voluntary - Non-Working Spouse",
+  "Voluntary - Member of Religious Group",
+  "Voluntary - Overseas Filipino Immigrant",
+  "Voluntary - Pensioner / Investor / Lessor",
+  "Voluntary - Other",
+] as const;
+export type PagIbigMemberType = (typeof pagIbigMemberTypes)[number];
+
 export const contributionFrequencies = ["Monthly", "Quarterly"] as const;
 export type ContributionFrequency = (typeof contributionFrequencies)[number];
 
@@ -72,6 +90,7 @@ export const governmentProviderDefinitions: Record<
     shortLabel: "Pag-IBIG",
     accountIdentifierLabel: "MID number",
     defaultFrequency: "Monthly",
+    trackerPath: "/pagibig",
   },
 };
 
@@ -149,6 +168,8 @@ function validMemberType(provider: GovernmentProvider, value: string) {
     return sssMemberTypes.includes(value as SssMemberType);
   if (provider === "PHILHEALTH")
     return philHealthMemberTypes.includes(value as PhilHealthMemberType);
+  if (provider === "PAGIBIG")
+    return pagIbigMemberTypes.includes(value as PagIbigMemberType);
   return true;
 }
 

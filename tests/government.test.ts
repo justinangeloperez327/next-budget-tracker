@@ -8,6 +8,7 @@ import {
   expectedContributionPeriods,
   governmentProviderDefinition,
   governmentProviders,
+  pagIbigMemberTypes,
   philHealthMemberTypes,
   phpMoney,
   sssContributionSummary,
@@ -78,7 +79,7 @@ test("shared government account validation supports provider-specific member typ
   const pagIbig: GovernmentAccount = {
     id: "99999999-9999-4999-8999-999999999999",
     provider: "PAGIBIG",
-    memberType: "Mandatory",
+    memberType: "Mandatory - Employed",
     frequency: "Monthly",
     active: true,
   };
@@ -195,6 +196,70 @@ test("PhilHealth dashboard uses the shared contribution engine", () => {
   );
 
   assert.equal(dashboard.ytdPaid, 250000);
+  assert.equal(dashboard.lastPayment?.period, "2026-08");
+  assert.equal(dashboard.nextExpectedPeriod, "2026-10");
+  assert.deepEqual(dashboard.pendingPeriods, ["2026-09"]);
+  assert.ok(dashboard.gapPeriods.includes("2026-01"));
+});
+
+test("Pag-IBIG member categories are provider-specific", () => {
+  assert.ok(pagIbigMemberTypes.includes("Mandatory - Employed"));
+  assert.ok(pagIbigMemberTypes.includes("Mandatory - OFW"));
+  assert.ok(pagIbigMemberTypes.includes("Voluntary - Individual Payor"));
+  assert.ok(pagIbigMemberTypes.includes("Voluntary - Non-Working Spouse"));
+
+  const pagIbig: GovernmentAccount = {
+    id: "12121212-1212-4212-8212-121212121212",
+    provider: "PAGIBIG",
+    memberType: "Mandatory - OFW",
+    accountIdentifier: "MID-123456789012",
+    monthlyTarget: 20000,
+    frequency: "Monthly",
+    active: true,
+  };
+
+  assert.equal(validGovernmentData([pagIbig], []), true);
+  assert.equal(
+    validGovernmentData([{ ...pagIbig, memberType: "Unknown" }], []),
+    false,
+  );
+});
+
+test("Pag-IBIG dashboard uses the shared contribution engine", () => {
+  const pagIbig: GovernmentAccount = {
+    id: "13131313-1313-4313-8313-131313131313",
+    provider: "PAGIBIG",
+    memberType: "Mandatory - OFW",
+    monthlyTarget: 20000,
+    frequency: "Monthly",
+    active: true,
+  };
+  const records: GovernmentContribution[] = [
+    {
+      id: "14141414-1414-4414-8414-141414141414",
+      accountId: pagIbig.id,
+      period: "2026-08",
+      amount: 20000,
+      paymentDate: "2026-08-10",
+      status: "Paid",
+      referenceNumber: "PAGIBIG-REF-001",
+    },
+    {
+      id: "15151515-1515-4515-8515-151515151515",
+      accountId: pagIbig.id,
+      period: "2026-09",
+      amount: 20000,
+      status: "Pending",
+    },
+  ];
+
+  const dashboard = contributionDashboardSnapshot(
+    pagIbig,
+    records,
+    "2026-10-08",
+  );
+
+  assert.equal(dashboard.ytdPaid, 20000);
   assert.equal(dashboard.lastPayment?.period, "2026-08");
   assert.equal(dashboard.nextExpectedPeriod, "2026-10");
   assert.deepEqual(dashboard.pendingPeriods, ["2026-09"]);
