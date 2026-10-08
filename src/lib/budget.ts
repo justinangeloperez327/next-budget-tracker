@@ -1,3 +1,9 @@
+import {
+  validGovernmentData,
+  type GovernmentAccount,
+  type GovernmentContribution,
+} from "./government.ts";
+
 export const categories = [
   "Housing",
   "Food",
@@ -20,6 +26,8 @@ export type BudgetData = {
   expenses: Expense[];
   budgets: Record<string, number>;
   categoryBudgets?: Record<string, CategoryBudget>;
+  governmentAccounts?: GovernmentAccount[];
+  governmentContributions?: GovernmentContribution[];
 };
 export type BudgetVarianceStatus = "saved" | "on-budget" | "overspent";
 export type CategoryBudgetSummary = {
@@ -74,6 +82,8 @@ export const emptyData: BudgetData = {
   expenses: [],
   budgets: {},
   categoryBudgets: {},
+  governmentAccounts: [],
+  governmentContributions: [],
 };
 
 function validCategoryBudgets(value: unknown) {
@@ -115,7 +125,11 @@ export function validData(data: unknown): data is BudgetData {
     Object.entries(d.budgets).every(
       ([k, v]) => /^\d{4}-\d{2}$/.test(k) && Number.isSafeInteger(v) && v >= 0,
     ) &&
-    validCategoryBudgets(d.categoryBudgets)
+    validCategoryBudgets(d.categoryBudgets) &&
+    validGovernmentData(
+      d.governmentAccounts,
+      d.governmentContributions,
+    )
   );
 }
 

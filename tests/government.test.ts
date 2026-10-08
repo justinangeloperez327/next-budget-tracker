@@ -1,0 +1,125 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  phpMoney,
+  sssContributionSummary,
+  validGovernmentData,
+  type GovernmentAccount,
+  type GovernmentContribution,
+} from "../src/lib/government.ts";
+import { validWorkspace } from "../src/lib/workspace-validation.ts";
+
+const account: GovernmentAccount = {
+  id: "11111111-1111-4111-8111-111111111111",
+  provider: "SSS",
+  memberType: "OFW",
+  accountIdentifier: "12-3456789-0",
+  monthlyTarget: 500000,
+  frequency: "Monthly",
+  active: true,
+};
+
+const contributions: GovernmentContribution[] = [
+  {
+    id: "22222222-2222-4222-8222-222222222222",
+    accountId: account.id,
+    period: "2026-01",
+    amount: 500000,
+    paymentDate: "2026-01-15",
+    status: "Paid",
+    referenceNumber: "REF-001",
+  },
+  {
+    id: "33333333-3333-4333-8333-333333333333",
+    accountId: account.id,
+    period: "2026-02",
+    amount: 500000,
+    status: "Pending",
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444444",
+    accountId: account.id,
+    period: "2026-03",
+    amount: 500000,
+    status: "Missed",
+  },
+];
+
+test("government contribution values validate", () => {
+  assert.equal(validGovernmentData([account], contributions), true);
+  assert.equal(
+    validGovernmentData(
+      [{ ...account, memberType: "Unknown" }],
+      contributions,
+    ),
+    false,
+  );
+  assert.equal(
+    validGovernmentData([account], [
+      { ...contributions[0], period: "2026-13" },
+    ]),
+    false,
+  );
+});
+
+test("SSS summary counts paid, pending, and missed records", () => {
+  assert.deepEqual(sssContributionSummary(account, contributions, 2026), {
+    year: 2026,
+    totalPaid: 500000,
+    paidMonths: 1,
+    pendingMonths: 1,
+    missedMonths: 1,
+    notRequiredMonths: 0,
+  });
+});
+
+test("workspace validates contribution ownership and paid dates", () => {
+  const base = {
+    expenses: [],
+    budgets: {},
+    categoryBudgets: {},
+    governmentAccounts: [account],
+    governmentContributions: contributions,
+  };
+
+  assert.equal(validWorkspace(base), true);
+  assert.equal(
+    validWorkspace({
+      ...base,
+      governmentContributions: [
+        {
+          ...contributions[0],
+          accountId: "55555555-5555-4555-8555-555555555555",
+        },
+      ],
+    }),
+    false,
+  );
+  assert.equal(
+    validWorkspace({
+      ...base,
+      governmentContributions: [
+        { ...contributions[0], paymentDate: undefined },
+      ],
+    }),
+    false,
+  );
+  assert.equal(
+    validWorkspace({
+      ...base,
+      governmentContributions: [
+        contributions[0],
+        {
+          ...contributions[1],
+          id: "66666666-6666-4666-8666-666666666666",
+          period: contributions[0].period,
+        },
+      ],
+    }),
+    false,
+  );
+});
+
+test("SSS amounts format in Philippine pesos", () => {
+  assert.match(phpMoney(123456), /1,234\.56/);
+});
