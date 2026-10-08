@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   phpMoney,
   sssContributionSummary,
+  sssDashboardSnapshot,
+  sssExpectedPeriods,
   sssContributionYearHistory,
   sssContributionYears,
   validGovernmentData,
@@ -99,6 +101,76 @@ test("SSS history year options include current and recorded years", () => {
     sssContributionYears(account, [...contributions, older], 2026),
     [2026, 2024],
   );
+});
+
+test("SSS dashboard distinguishes schedule gaps from explicit missed records", () => {
+  const dashboard = sssDashboardSnapshot(account, contributions, "2026-10-08");
+
+  assert.equal(dashboard.year, 2026);
+  assert.equal(dashboard.currentPeriod, "2026-10");
+  assert.equal(dashboard.ytdPaid, 500000);
+  assert.equal(dashboard.expectedDuePeriods, 10);
+  assert.equal(dashboard.paidExpectedPeriods, 1);
+  assert.equal(dashboard.progressRate, 10);
+  assert.equal(dashboard.lastPayment?.period, "2026-01");
+  assert.equal(dashboard.nextExpectedPeriod, "2026-10");
+  assert.deepEqual(dashboard.pendingPeriods, ["2026-02"]);
+  assert.deepEqual(dashboard.missedPeriods, ["2026-03"]);
+  assert.deepEqual(dashboard.gapPeriods, [
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+  ]);
+});
+
+test("SSS quarterly schedule uses quarter-end contribution periods", () => {
+  const quarterly = { ...account, frequency: "Quarterly" as const };
+  assert.deepEqual(sssExpectedPeriods(quarterly, 2026), [
+    "2026-03",
+    "2026-06",
+    "2026-09",
+    "2026-12",
+  ]);
+
+  const dashboard = sssDashboardSnapshot(
+    quarterly,
+    [
+      {
+        ...contributions[0],
+        period: "2026-03",
+        paymentDate: "2026-03-20",
+      },
+      {
+        ...contributions[1],
+        period: "2026-06",
+        status: "Paid",
+        paymentDate: "2026-06-20",
+      },
+    ],
+    "2026-10-08",
+  );
+
+  assert.equal(dashboard.expectedDuePeriods, 3);
+  assert.equal(dashboard.paidExpectedPeriods, 2);
+  assert.deepEqual(dashboard.gapPeriods, ["2026-09"]);
+  assert.equal(dashboard.nextExpectedPeriod, "2026-12");
+  assert.equal(dashboard.lastPayment?.period, "2026-06");
+});
+
+test("inactive SSS account has no expected contribution schedule", () => {
+  const dashboard = sssDashboardSnapshot(
+    { ...account, active: false },
+    contributions,
+    "2026-10-08",
+  );
+
+  assert.deepEqual(sssExpectedPeriods({ ...account, active: false }, 2026), []);
+  assert.equal(dashboard.expectedDuePeriods, 0);
+  assert.equal(dashboard.nextExpectedPeriod, undefined);
+  assert.deepEqual(dashboard.gapPeriods, []);
 });
 
 test("workspace validates contribution ownership and paid dates", () => {

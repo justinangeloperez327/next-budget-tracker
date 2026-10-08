@@ -7,7 +7,7 @@ import {
   contributionFrequencies,
   contributionStatuses,
   phpMoney,
-  sssContributionSummary,
+  sssDashboardSnapshot,
   sssMemberTypes,
   type GovernmentAccount,
   type GovernmentContribution,
@@ -36,6 +36,16 @@ function toCentavos(value: FormDataEntryValue | null, optional = false) {
 function optionalText(value: FormDataEntryValue | null) {
   const text = String(value ?? "").trim();
   return text || undefined;
+}
+
+function periodLabel(period: string | undefined) {
+  if (!period) return "Not scheduled";
+  const [year, month] = period.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-PH", {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, 1)));
 }
 
 function SssProfileForm({
@@ -352,8 +362,8 @@ export function SssTracker() {
         ),
     [account?.id, data.governmentContributions],
   );
-  const year = new Date().getFullYear();
-  const summary = sssContributionSummary(account, contributions, year);
+  const today = new Date().toLocaleDateString("en-CA");
+  const dashboard = sssDashboardSnapshot(account, contributions, today);
 
   async function removeContribution(id: string) {
     await save({
@@ -370,7 +380,7 @@ export function SssTracker() {
       <div>
         <p className="eyebrow">Government contributions</p>
         <h1 className="mt-2 text-2xl font-medium tracking-tight">
-          SSS tracker
+          SSS dashboard
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
           Keep your SSS membership details and contribution records together.
@@ -389,57 +399,148 @@ export function SssTracker() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Membership
+              YTD contributions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xl font-medium tabular-nums">
+              {phpMoney(dashboard.ytdPaid)}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {dashboard.paidExpectedPeriods} / {dashboard.expectedDuePeriods} expected periods paid
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Last payment
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xl font-medium">
-              {account?.memberType ?? "Not set"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Monthly target
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-medium tabular-nums">
-              {account?.monthlyTarget === undefined
-                ? "Not set"
-                : phpMoney(account.monthlyTarget)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Paid in {year}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-medium tabular-nums">
-              {phpMoney(summary.totalPaid)}
+              {dashboard.lastPayment
+                ? periodLabel(dashboard.lastPayment.period)
+                : "No payment yet"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {summary.paidMonths} paid record
-              {summary.paidMonths === 1 ? "" : "s"}
+              {dashboard.lastPayment
+                ? `${phpMoney(dashboard.lastPayment.amount)} · ${dashboard.lastPayment.paymentDate}`
+                : "Record a paid contribution to populate this card"}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Attention
+              Next expected
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-medium tabular-nums">
-              {summary.pendingMonths + summary.missedMonths}
+            <p className="text-xl font-medium">
+              {account?.active
+                ? periodLabel(dashboard.nextExpectedPeriod)
+                : "Membership inactive"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {summary.pendingMonths} pending · {summary.missedMonths} missed
+              {account
+                ? `${account.frequency} contribution schedule`
+                : "Save your SSS profile to create a schedule"}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Contribution gaps
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p
+              className={`text-xl font-medium tabular-nums ${
+                dashboard.gapPeriods.length > 0 ? "text-destructive" : ""
+              }`}
+            >
+              {dashboard.gapPeriods.length}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Unrecorded expected past periods
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-medium">
+              {dashboard.year} expected-period progress
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span>
+                {dashboard.paidExpectedPeriods} paid of{" "}
+                {dashboard.expectedDuePeriods} expected through this month
+              </span>
+              <span className="tabular-nums text-muted-foreground">
+                {dashboard.progressRate.toFixed(1)}%
+              </span>
+            </div>
+            <div
+              role="progressbar"
+              aria-label="SSS expected contribution periods paid"
+              aria-valuenow={Math.round(dashboard.progressRate)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              className="mt-3 h-2 overflow-hidden rounded-full bg-muted"
+            >
+              <div
+                className="h-full bg-primary"
+                style={{ width: Math.min(100, dashboard.progressRate) + "%" }}
+              />
+            </div>
+            <p className="mt-3 text-xs leading-5 text-muted-foreground">
+              Progress is based on your saved {account?.frequency.toLowerCase() ?? "contribution"} schedule,
+              not on an official SSS rate calculation.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-medium">
+              Needs attention
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            <div>
+              <p className="text-muted-foreground">Unrecorded gaps</p>
+              <p className={dashboard.gapPeriods.length ? "mt-1 text-destructive" : "mt-1"}>
+                {dashboard.gapPeriods.length
+                  ? dashboard.gapPeriods.map(periodLabel).join(", ")
+                  : "No past expected-period gaps"}
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Pending records</p>
+              <p className="mt-1">
+                {dashboard.pendingPeriods.length
+                  ? dashboard.pendingPeriods.map(periodLabel).join(", ")
+                  : "None"}
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Explicitly missed</p>
+              <p className={dashboard.missedPeriods.length ? "mt-1 text-destructive" : "mt-1"}>
+                {dashboard.missedPeriods.length
+                  ? dashboard.missedPeriods.map(periodLabel).join(", ")
+                  : "None"}
+              </p>
+            </div>
+            <p className="border-t pt-3 text-xs leading-5 text-muted-foreground">
+              A gap only means no record exists for an expected past period. It
+              is not automatically classified as a missed SSS contribution.
             </p>
           </CardContent>
         </Card>

@@ -57,6 +57,20 @@ export type SssContributionHistoryMonth = {
   contribution?: GovernmentContribution;
 };
 
+export type SssDashboardSnapshot = {
+  year: number;
+  currentPeriod: string;
+  ytdPaid: number;
+  expectedDuePeriods: number;
+  paidExpectedPeriods: number;
+  progressRate: number;
+  lastPayment?: GovernmentContribution;
+  nextExpectedPeriod?: string;
+  gapPeriods: string[];
+  pendingPeriods: string[];
+  missedPeriods: string[];
+};
+
 const MONTH_PATTERN = /^(19|20|21)\d{2}-(0[1-9]|1[0-2])$/;
 const DATE_PATTERN = /^(19|20|21)\d{2}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/;
 
@@ -194,6 +208,104 @@ export function sssContributionYearHistory(
       ...(contribution ? { contribution } : {}),
     };
   });
+}
+
+export function sssExpectedPeriods(
+  account: GovernmentAccount | undefined,
+  year: number,
+) {
+  if (!account?.active) return [];
+  const months =
+    account.frequency === "Quarterly"
+      ? [3, 6, 9, 12]
+      : Array.from({ length: 12 }, (_, index) => index + 1);
+
+  return months.map(
+    (month) => `${year}-${String(month).padStart(2, "0")}`,
+  );
+}
+
+export function sssDashboardSnapshot(
+  account: GovernmentAccount | undefined,
+  contributions: GovernmentContribution[],
+  asOfDate: string,
+): SssDashboardSnapshot {
+  const currentPeriod = asOfDate.slice(0, 7);
+  const year = Number(currentPeriod.slice(0, 4));
+  const accountContributions = account
+    ? contributions.filter(
+        (contribution) => contribution.accountId === account.id,
+      )
+    : [];
+  const expectedPeriods = sssExpectedPeriods(account, year);
+  const contributionByPeriod = new Map(
+    accountContributions.map((contribution) => [
+      contribution.period,
+      contribution,
+    ]),
+  );
+  const dueExpected = expectedPeriods.filter(
+    (period) => period <= currentPeriod,
+  );
+  const paidExpected = dueExpected.filter(
+    (period) => contributionByPeriod.get(period)?.status === "Paid",
+  );
+  const gapPeriods = expectedPeriods.filter(
+    (period) => period < currentPeriod && !contributionByPeriod.has(period),
+  );
+  const pendingPeriods = dueExpected.filter(
+    (period) => contributionByPeriod.get(period)?.status === "Pending",
+  );
+  const missedPeriods = dueExpected.filter(
+    (period) => contributionByPeriod.get(period)?.status === "Missed",
+  );
+  const lastPayment = accountContributions
+    .filter(
+      (contribution) =>
+        contribution.status === "Paid" && !!contribution.paymentDate,
+    )
+    .toSorted(
+      (a, b) =>
+        (b.paymentDate ?? "").localeCompare(a.paymentDate ?? "") ||
+        b.period.localeCompare(a.period),
+    )[0];
+
+  let nextExpectedPeriod: string | undefined;
+  if (account?.active) {
+    nextExpectedPeriod = expectedPeriods.find((period) => {
+      if (period < currentPeriod) return false;
+      const status = contributionByPeriod.get(period)?.status;
+      return status !== "Paid" && status !== "Not Required";
+    });
+
+    if (!nextExpectedPeriod) {
+      nextExpectedPeriod = sssExpectedPeriods(account, year + 1)[0];
+    }
+  }
+
+  return {
+    year,
+    currentPeriod,
+    ytdPaid: accountContributions
+      .filter(
+        (contribution) =>
+          contribution.status === "Paid" &&
+          contribution.period.startsWith(String(year)) &&
+          contribution.period <= currentPeriod,
+      )
+      .reduce((sum, contribution) => sum + contribution.amount, 0),
+    expectedDuePeriods: dueExpected.length,
+    paidExpectedPeriods: paidExpected.length,
+    progressRate:
+      dueExpected.length > 0
+        ? (paidExpected.length / dueExpected.length) * 100
+        : 0,
+    ...(lastPayment ? { lastPayment } : {}),
+    ...(nextExpectedPeriod ? { nextExpectedPeriod } : {}),
+    gapPeriods,
+    pendingPeriods,
+    missedPeriods,
+  };
 }
 
 export function phpMoney(centavos: number) {
