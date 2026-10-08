@@ -20,6 +20,7 @@ model User {
   governmentAccounts GovernmentAccount[]
   mp2Accounts        Mp2Account[]
   recurringBills     RecurringBill[]
+  debts              Debt[]
 }
 
 model Session {
@@ -154,6 +155,38 @@ model BillPayment {
 
   @@unique([billId, period])
   @@index([billId, paymentDate])
+  @@index([expenseId])
+}
+
+model Debt {
+  id             String        @id
+  userId         String
+  name           String
+  lender         String
+  originalAmount BigInt
+  category       String
+  startDate      String
+  dueDate        String?
+  monthlyTarget  BigInt?
+  active         Boolean       @default(true)
+  notes          String?
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments       DebtPayment[]
+
+  @@index([userId])
+}
+
+model DebtPayment {
+  id              String @id
+  debtId          String
+  amount          BigInt
+  paymentDate     String
+  expenseId       String
+  referenceNumber String?
+  notes           String?
+  debt            Debt   @relation(fields: [debtId], references: [id], onDelete: Cascade)
+
+  @@index([debtId, paymentDate])
   @@index([expenseId])
 }
 

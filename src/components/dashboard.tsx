@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { NotebookNote } from "@/components/sakura-companion";
-import { CalendarDays, Wallet, Receipt, Target } from "lucide-react";
+import { CalendarDays, HandCoins, Wallet, Receipt, Target } from "lucide-react";
 import { SpotlightCard } from "@/components/kokonutui/spotlight-cards";
 import { useState } from "react";
 import { useBudget } from "@/components/budget-provider";
 import { categories, money, total } from "@/lib/budget";
 import { billOccurrencesForPeriod } from "@/lib/bills";
+import { debtDashboardSnapshot } from "@/lib/debt";
 import { ExpenseEditor } from "@/components/expense-editor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,11 @@ export function Dashboard() {
   const overdueBills = billOccurrences.filter(
     (entry) => entry.status === "Overdue",
   ).length;
+  const debtSummary = debtDashboardSnapshot(
+    data.debts ?? [],
+    data.debtPayments ?? [],
+    today,
+  );
   const spent = total(expenses),
     budget = data.budgets[month] || 0;
   const [status, setStatus] = useState("");
@@ -59,7 +65,7 @@ export function Dashboard() {
           }}
         />
       </div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {[
           {
             label: budget && spent > budget ? "Over budget" : "Remaining",
@@ -97,6 +103,17 @@ export function Dashboard() {
             description: overdueBills
               ? `${overdueBills} overdue bill${overdueBills === 1 ? "" : "s"}`
               : `${billOccurrences.filter((entry) => !entry.payment).length} still due`,
+          },
+          {
+            label: "Debt remaining",
+            value: money(debtSummary.remaining),
+            icon: HandCoins,
+            color: debtSummary.overdueCount
+              ? "var(--destructive)"
+              : "var(--primary)",
+            description: debtSummary.overdueCount
+              ? `${debtSummary.overdueCount} overdue debt${debtSummary.overdueCount === 1 ? "" : "s"}`
+              : `${debtSummary.activeCount} active debt${debtSummary.activeCount === 1 ? "" : "s"}`,
           },
         ].map(({ label, value, icon, color, description }, index) => (
           <SpotlightCard

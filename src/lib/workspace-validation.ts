@@ -10,6 +10,8 @@ const MAX_MP2_ACCOUNTS = 24;
 const MAX_MP2_DEPOSITS = 5_000;
 const MAX_RECURRING_BILLS = 300;
 const MAX_BILL_PAYMENTS = 5_000;
+const MAX_DEBTS = 500;
+const MAX_DEBT_PAYMENTS = 5_000;
 const MONTH_PATTERN = /^(19|20|21)\d{2}-(0[1-9]|1[0-2])$/;
 const UUID_PATTERN = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 
@@ -23,6 +25,8 @@ export function validWorkspace(value: unknown): value is BudgetData {
   const mp2Deposits = value.mp2Deposits ?? [];
   const recurringBills = value.recurringBills ?? [];
   const billPayments = value.billPayments ?? [];
+  const debts = value.debts ?? [];
+  const debtPayments = value.debtPayments ?? [];
   const budgetMonths = new Set([
     ...Object.keys(value.budgets),
     ...Object.keys(categoryBudgets),
@@ -34,7 +38,9 @@ export function validWorkspace(value: unknown): value is BudgetData {
     mp2Accounts.length > MAX_MP2_ACCOUNTS ||
     mp2Deposits.length > MAX_MP2_DEPOSITS ||
     recurringBills.length > MAX_RECURRING_BILLS ||
-    billPayments.length > MAX_BILL_PAYMENTS
+    billPayments.length > MAX_BILL_PAYMENTS ||
+    debts.length > MAX_DEBTS ||
+    debtPayments.length > MAX_DEBT_PAYMENTS
   )
     return false;
 
@@ -194,6 +200,58 @@ export function validWorkspace(value: unknown): value is BudgetData {
     billPaymentIds.add(payment.id);
     paidPeriods.add(periodKey);
     billExpenseIds.add(payment.expenseId);
+  }
+
+  const debtIds = new Set<string>();
+  for (const debt of debts) {
+    if (
+      !UUID_PATTERN.test(debt.id) ||
+      debtIds.has(debt.id) ||
+      debt.originalAmount > MAX_AMOUNT ||
+      (debt.monthlyTarget !== undefined && debt.monthlyTarget > MAX_AMOUNT) ||
+      !debt.name.trim() ||
+      debt.name.length > 120 ||
+      !debt.lender.trim() ||
+      debt.lender.length > 120 ||
+      (debt.notes !== undefined &&
+        (debt.notes.length > 500 || !debt.notes.trim()))
+    )
+      return false;
+    debtIds.add(debt.id);
+  }
+
+  const debtPaymentIds = new Set<string>();
+  const debtExpenseIds = new Set<string>();
+  const paidByDebt = new Map<string, number>();
+  for (const payment of debtPayments) {
+    const debt = debts.find((entry) => entry.id === payment.debtId);
+    const expense = value.expenses.find(
+      (entry) => entry.id === payment.expenseId,
+    );
+    if (
+      !UUID_PATTERN.test(payment.id) ||
+      debtPaymentIds.has(payment.id) ||
+      !debt ||
+      payment.amount > MAX_AMOUNT ||
+      !UUID_PATTERN.test(payment.expenseId) ||
+      !expense ||
+      debtExpenseIds.has(payment.expenseId) ||
+      billExpenseIds.has(payment.expenseId) ||
+      expense.amount !== payment.amount ||
+      expense.date !== payment.paymentDate ||
+      expense.category !== debt.category ||
+      (payment.referenceNumber !== undefined &&
+        (payment.referenceNumber.length > 80 ||
+          !payment.referenceNumber.trim())) ||
+      (payment.notes !== undefined &&
+        (payment.notes.length > 500 || !payment.notes.trim()))
+    )
+      return false;
+    const nextPaid = (paidByDebt.get(payment.debtId) ?? 0) + payment.amount;
+    if (nextPaid > debt.originalAmount) return false;
+    paidByDebt.set(payment.debtId, nextPaid);
+    debtPaymentIds.add(payment.id);
+    debtExpenseIds.add(payment.expenseId);
   }
 
   return true;

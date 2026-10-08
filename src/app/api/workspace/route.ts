@@ -25,6 +25,7 @@ export async function GET() {
             governmentAccounts: { include: { contributions: true } },
             mp2Accounts: { include: { deposits: true } },
             recurringBills: { include: { payments: true } },
+            debts: { include: { payments: true } },
           },
         }),
       { isolationLevel: "RepeatableRead" },
@@ -139,6 +140,33 @@ export async function GET() {
             ...(payment.notes ? { notes: payment.notes } : {}),
           })),
         ),
+        debts: snapshot.debts.map((debt) => ({
+          id: debt.id,
+          name: debt.name,
+          lender: debt.lender,
+          originalAmount: Number(debt.originalAmount),
+          category: debt.category,
+          startDate: debt.startDate,
+          ...(debt.dueDate ? { dueDate: debt.dueDate } : {}),
+          ...(debt.monthlyTarget === null
+            ? {}
+            : { monthlyTarget: Number(debt.monthlyTarget) }),
+          active: debt.active,
+          ...(debt.notes ? { notes: debt.notes } : {}),
+        })),
+        debtPayments: snapshot.debts.flatMap((debt) =>
+          debt.payments.map((payment) => ({
+            id: payment.id,
+            debtId: payment.debtId,
+            amount: Number(payment.amount),
+            paymentDate: payment.paymentDate,
+            expenseId: payment.expenseId,
+            ...(payment.referenceNumber
+              ? { referenceNumber: payment.referenceNumber }
+              : {}),
+            ...(payment.notes ? { notes: payment.notes } : {}),
+          })),
+        ),
       },
     });
   } catch (error) {
@@ -174,6 +202,8 @@ export async function PUT(request: Request) {
     const mp2Deposits = data.mp2Deposits ?? [];
     const recurringBills = data.recurringBills ?? [];
     const billPayments = data.billPayments ?? [];
+    const debts = data.debts ?? [];
+    const debtPayments = data.debtPayments ?? [];
     const revision = Number(input.revision);
     await db().$transaction(async (tx) => {
       const updated = await tx.user.updateMany({
@@ -186,6 +216,7 @@ export async function PUT(request: Request) {
           "Your notebook changed in another tab or device. Reload before editing again.",
         );
 
+      await tx.debt.deleteMany({ where: { userId: user.id } });
       await tx.recurringBill.deleteMany({ where: { userId: user.id } });
       await tx.mp2Account.deleteMany({ where: { userId: user.id } });
       await tx.governmentAccount.deleteMany({ where: { userId: user.id } });
@@ -320,6 +351,39 @@ export async function PUT(request: Request) {
             id: payment.id,
             billId: payment.billId,
             period: payment.period,
+            amount: BigInt(payment.amount),
+            paymentDate: payment.paymentDate,
+            expenseId: payment.expenseId,
+            referenceNumber: payment.referenceNumber ?? null,
+            notes: payment.notes ?? null,
+          })),
+        });
+
+      if (debts.length)
+        await tx.debt.createMany({
+          data: debts.map((debt) => ({
+            id: debt.id,
+            userId: user.id,
+            name: debt.name,
+            lender: debt.lender,
+            originalAmount: BigInt(debt.originalAmount),
+            category: debt.category,
+            startDate: debt.startDate,
+            dueDate: debt.dueDate ?? null,
+            monthlyTarget:
+              debt.monthlyTarget === undefined
+                ? null
+                : BigInt(debt.monthlyTarget),
+            active: debt.active,
+            notes: debt.notes ?? null,
+          })),
+        });
+
+      if (debtPayments.length)
+        await tx.debtPayment.createMany({
+          data: debtPayments.map((payment) => ({
+            id: payment.id,
+            debtId: payment.debtId,
             amount: BigInt(payment.amount),
             paymentDate: payment.paymentDate,
             expenseId: payment.expenseId,

@@ -28,9 +28,10 @@ export function Expenses() {
     [category, setCategory] = useState("All"),
     [month, setMonth] = useState(""),
     [deleting, setDeleting] = useState<Expense | null>(null);
-  const billManagedExpenseIds = new Set(
-    (data.billPayments ?? []).map((payment) => payment.expenseId),
-  );
+  const managedExpenseIds = new Set([
+    ...(data.billPayments ?? []).map((payment) => payment.expenseId),
+    ...(data.debtPayments ?? []).map((payment) => payment.expenseId),
+  ]);
   const filtered = data.expenses
     .filter(
       (e) =>
@@ -153,9 +154,9 @@ export function Expenses() {
                     {money(e.amount)}
                   </TableCell>
                   <TableCell>
-                    {billManagedExpenseIds.has(e.id) ? (
+                    {managedExpenseIds.has(e.id) ? (
                       <div className="text-right text-xs text-muted-foreground">
-                        Managed in Bills
+                        Managed by linked record
                       </div>
                     ) : (
                       <div className="flex justify-end gap-1">

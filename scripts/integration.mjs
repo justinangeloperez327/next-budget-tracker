@@ -86,6 +86,7 @@ try {
   assert.equal((await request("/mp2", { cookie })).status, 200);
   assert.equal((await request("/mp2/history", { cookie })).status, 200);
   assert.equal((await request("/bills", { cookie })).status, 200);
+  assert.equal((await request("/debts", { cookie })).status, 200);
   const initial = await (await request("/api/workspace", { cookie })).json();
   assert.equal(initial.user.email, email);
   assert.equal(initial.revision, 0);
@@ -95,6 +96,8 @@ try {
   const mp2AccountId = randomUUID();
   const rentBillId = randomUUID();
   const rentExpenseId = randomUUID();
+  const debtId = randomUUID();
+  const debtExpenseId = randomUUID();
   const data = {
     expenses: [
       {
@@ -110,6 +113,13 @@ try {
         category: "Housing",
         date: "2026-10-01",
         amount: 185000,
+      },
+      {
+        id: debtExpenseId,
+        description: "Debt payment · Personal loan",
+        category: "Other",
+        date: "2026-10-08",
+        amount: 50000,
       },
     ],
     budgets: { "2026-10": 9_500_000_000 },
@@ -217,6 +227,30 @@ try {
         referenceNumber: "RENT-OCT-2026",
       },
     ],
+    debts: [
+      {
+        id: debtId,
+        name: "Personal loan",
+        lender: "Family",
+        originalAmount: 500000,
+        category: "Other",
+        startDate: "2026-01-10",
+        dueDate: "2026-12-31",
+        monthlyTarget: 50000,
+        active: true,
+        notes: "Integration test debt",
+      },
+    ],
+    debtPayments: [
+      {
+        id: randomUUID(),
+        debtId,
+        amount: 50000,
+        paymentDate: "2026-10-08",
+        expenseId: debtExpenseId,
+        referenceNumber: "DEBT-PAY-001",
+      },
+    ],
   };
   assert.equal(
     (
@@ -269,6 +303,8 @@ try {
       mp2Deposits: [],
       recurringBills: [],
       billPayments: [],
+      debts: [],
+      debtPayments: [],
     },
   );
   assert.equal(
@@ -320,6 +356,8 @@ try {
       mp2Deposits: [],
       recurringBills: [],
       billPayments: [],
+      debts: [],
+      debtPayments: [],
     },
   );
   console.log(

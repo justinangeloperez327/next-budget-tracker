@@ -13,6 +13,11 @@ import {
   type RecurringBill,
   type BillPayment,
 } from "./bills.ts";
+import {
+  validDebtData,
+  type Debt,
+  type DebtPayment,
+} from "./debt.ts";
 
 export const categories = [
   "Housing",
@@ -42,6 +47,8 @@ export type BudgetData = {
   mp2Deposits?: Mp2Deposit[];
   recurringBills?: RecurringBill[];
   billPayments?: BillPayment[];
+  debts?: Debt[];
+  debtPayments?: DebtPayment[];
 };
 export type BudgetVarianceStatus = "saved" | "on-budget" | "overspent";
 export type CategoryBudgetSummary = {
@@ -102,6 +109,8 @@ export const emptyData: BudgetData = {
   mp2Deposits: [],
   recurringBills: [],
   billPayments: [],
+  debts: [],
+  debtPayments: [],
 };
 
 function validCategoryBudgets(value: unknown) {
@@ -150,7 +159,9 @@ export function validData(data: unknown): data is BudgetData {
     ) &&
     validMp2Data(d.mp2Accounts, d.mp2Deposits) &&
     validBillsData(d.recurringBills, d.billPayments) &&
-    (d.recurringBills ?? []).every((bill) => categories.includes(bill.category))
+    validDebtData(d.debts, d.debtPayments) &&
+    (d.recurringBills ?? []).every((bill) => categories.includes(bill.category)) &&
+    (d.debts ?? []).every((debt) => categories.includes(debt.category))
   );
 }
 
