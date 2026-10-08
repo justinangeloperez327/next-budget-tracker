@@ -8,7 +8,7 @@ import {
   type BillPayment,
   type RecurringBill,
 } from "@/lib/bills";
-import { categories, money } from "@/lib/budget";
+import { categories, money, type Expense } from "@/lib/budget";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -152,12 +152,15 @@ export function BillsTracker() {
       return;
     }
 
+    const paymentDate = String(formData.get("payment-date"));
+    const expenseId = crypto.randomUUID();
     const payment: BillPayment = {
       id: crypto.randomUUID(),
       billId,
       period: paymentPeriod,
       amount,
-      paymentDate: String(formData.get("payment-date")),
+      paymentDate,
+      expenseId,
       ...(optionalText(formData.get("reference"))
         ? { referenceNumber: optionalText(formData.get("reference")) }
         : {}),
@@ -165,9 +168,17 @@ export function BillsTracker() {
         ? { notes: optionalText(formData.get("notes")) }
         : {}),
     };
+    const expense: Expense = {
+      id: expenseId,
+      description: bill.name,
+      amount,
+      category: bill.category,
+      date: paymentDate,
+    };
 
     const saved = await save({
       ...data,
+      expenses: [...data.expenses, expense],
       recurringBills: bills,
       billPayments: [...payments, payment],
     });
@@ -178,18 +189,29 @@ export function BillsTracker() {
   }
 
   async function removeBill(id: string) {
+    if (payments.some((payment) => payment.billId === id)) {
+      setBillStatus(
+        "Deactivate bills with payment history instead of deleting them.",
+      );
+      return;
+    }
     await save({
       ...data,
       recurringBills: bills.filter((bill) => bill.id !== id),
-      billPayments: payments.filter((payment) => payment.billId !== id),
+      billPayments: payments,
     });
   }
 
   async function removePayment(id: string) {
+    const payment = payments.find((entry) => entry.id === id);
+    if (!payment) return;
     await save({
       ...data,
+      expenses: data.expenses.filter(
+        (expense) => expense.id !== payment.expenseId,
+      ),
       recurringBills: bills,
-      billPayments: payments.filter((payment) => payment.id !== id),
+      billPayments: payments.filter((entry) => entry.id !== id),
     });
   }
 
@@ -202,8 +224,9 @@ export function BillsTracker() {
             Monthly obligations
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Schedule recurring bills, monitor due dates, and record payments
-            without automatically duplicating them in your expense ledger.
+            Schedule recurring bills, monitor due dates, and record payments.
+            Each paid bill creates one linked expense so Budget vs. Actual stays
+            accurate without double counting.
           </p>
         </div>
         <div className="space-y-2">
@@ -567,9 +590,9 @@ export function BillsTracker() {
                 </div>
               </div>
               <div className="rounded-md border bg-muted/30 p-3 text-xs leading-5 text-muted-foreground">
-                Recording a bill payment does not create an expense entry.
-                This keeps the bill schedule and actual-spending ledger separate
-                until you explicitly choose to link them.
+                Recording a bill payment creates one linked expense using the
+                bill category and actual paid amount. Delete the payment here to
+                reverse that linked expense.
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <Button disabled={!bills.length || saving || !!error}>

@@ -168,6 +168,7 @@ export function validWorkspace(value: unknown): value is BudgetData {
 
   const billPaymentIds = new Set<string>();
   const paidPeriods = new Set<string>();
+  const billExpenseIds = new Set<string>();
   for (const payment of billPayments) {
     const periodKey = payment.billId + ":" + payment.period;
     if (
@@ -175,6 +176,9 @@ export function validWorkspace(value: unknown): value is BudgetData {
       billPaymentIds.has(payment.id) ||
       paidPeriods.has(periodKey) ||
       !billIds.has(payment.billId) ||
+      !UUID_PATTERN.test(payment.expenseId) ||
+      !ids.has(payment.expenseId) ||
+      billExpenseIds.has(payment.expenseId) ||
       !billOccursInPeriod(
         recurringBills.find((bill) => bill.id === payment.billId)!,
         payment.period,
@@ -189,6 +193,7 @@ export function validWorkspace(value: unknown): value is BudgetData {
       return false;
     billPaymentIds.add(payment.id);
     paidPeriods.add(periodKey);
+    billExpenseIds.add(payment.expenseId);
   }
 
   return true;

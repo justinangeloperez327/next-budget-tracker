@@ -132,6 +132,7 @@ export async function GET() {
             period: payment.period,
             amount: Number(payment.amount),
             paymentDate: payment.paymentDate,
+            expenseId: payment.expenseId,
             ...(payment.referenceNumber
               ? { referenceNumber: payment.referenceNumber }
               : {}),
@@ -321,6 +322,7 @@ export async function PUT(request: Request) {
             period: payment.period,
             amount: BigInt(payment.amount),
             paymentDate: payment.paymentDate,
+            expenseId: payment.expenseId,
             referenceNumber: payment.referenceNumber ?? null,
             notes: payment.notes ?? null,
           })),

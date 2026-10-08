@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
 import { NotebookNote } from "@/components/sakura-companion";
-import { Wallet, Receipt, Target } from "lucide-react";
+import { CalendarDays, Wallet, Receipt, Target } from "lucide-react";
 import { SpotlightCard } from "@/components/kokonutui/spotlight-cards";
 import { useState } from "react";
 import { useBudget } from "@/components/budget-provider";
 import { categories, money, total } from "@/lib/budget";
+import { billOccurrencesForPeriod } from "@/lib/bills";
 import { ExpenseEditor } from "@/components/expense-editor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,19 @@ export function Dashboard() {
     new Date().toLocaleDateString("en-CA").slice(0, 7),
   );
   const expenses = data.expenses.filter((e) => e.date.startsWith(month));
+  const today = new Date().toLocaleDateString("en-CA");
+  const billOccurrences = billOccurrencesForPeriod(
+    data.recurringBills ?? [],
+    data.billPayments ?? [],
+    month,
+    today,
+  );
+  const billsOutstanding = billOccurrences
+    .filter((entry) => !entry.payment)
+    .reduce((sum, entry) => sum + entry.bill.amount, 0);
+  const overdueBills = billOccurrences.filter(
+    (entry) => entry.status === "Overdue",
+  ).length;
   const spent = total(expenses),
     budget = data.budgets[month] || 0;
   const [status, setStatus] = useState("");
@@ -45,7 +59,7 @@ export function Dashboard() {
           }}
         />
       </div>
-      <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr_1fr]">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
           {
             label: budget && spent > budget ? "Over budget" : "Remaining",
@@ -75,10 +89,21 @@ export function Dashboard() {
             color: "var(--muted-foreground)",
             description: `${expenses.length} expenses recorded`,
           },
+          {
+            label: "Bills outstanding",
+            value: money(billsOutstanding),
+            icon: CalendarDays,
+            color: overdueBills ? "var(--destructive)" : "var(--primary)",
+            description: overdueBills
+              ? `${overdueBills} overdue bill${overdueBills === 1 ? "" : "s"}`
+              : `${billOccurrences.filter((entry) => !entry.payment).length} still due`,
+          },
         ].map(({ label, value, icon, color, description }, index) => (
           <SpotlightCard
             key={label}
-            className={index === 0 ? "notebook-note" : undefined}
+            className={
+              index === 0 ? "notebook-note md:col-span-2 xl:col-span-1" : undefined
+            }
             item={{ title: label, description, icon, color }}
           >
             <p

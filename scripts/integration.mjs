@@ -94,6 +94,7 @@ try {
   const pagIbigAccountId = randomUUID();
   const mp2AccountId = randomUUID();
   const rentBillId = randomUUID();
+  const rentExpenseId = randomUUID();
   const data = {
     expenses: [
       {
@@ -102,6 +103,13 @@ try {
         category: "Food",
         date: "2026-10-07",
         amount: 9_000_000_000,
+      },
+      {
+        id: rentExpenseId,
+        description: "Rent",
+        category: "Housing",
+        date: "2026-10-01",
+        amount: 185000,
       },
     ],
     budgets: { "2026-10": 9_500_000_000 },
@@ -205,6 +213,7 @@ try {
         period: "2026-10",
         amount: 185000,
         paymentDate: "2026-10-01",
+        expenseId: rentExpenseId,
         referenceNumber: "RENT-OCT-2026",
       },
     ],

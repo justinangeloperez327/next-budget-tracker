@@ -147,12 +147,14 @@ model BillPayment {
   period          String
   amount          BigInt
   paymentDate     String
+  expenseId       String
   referenceNumber String?
   notes           String?
   bill            RecurringBill @relation(fields: [billId], references: [id], onDelete: Cascade)
 
   @@unique([billId, period])
   @@index([billId, paymentDate])
+  @@index([expenseId])
 }
 
 model AuthAttempt {

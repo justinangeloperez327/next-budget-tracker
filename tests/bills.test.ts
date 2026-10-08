@@ -39,6 +39,7 @@ const rentPayment: BillPayment = {
   period: "2026-10",
   amount: 190000,
   paymentDate: "2026-10-01",
+  expenseId: "45454545-aaaa-4454-8454-454545454545",
   referenceNumber: "RENT-OCT",
 };
 
@@ -111,7 +112,15 @@ test("bill payload validation rejects invalid schedule values", () => {
 
 test("workspace enforces bill payment ownership, recurrence, and unique periods", () => {
   const base = {
-    expenses: [],
+    expenses: [
+      {
+        id: rentPayment.expenseId,
+        description: "Rent",
+        category: "Housing" as const,
+        amount: rentPayment.amount,
+        date: rentPayment.paymentDate,
+      },
+    ],
     budgets: {},
     categoryBudgets: {},
     governmentAccounts: [],
@@ -123,6 +132,13 @@ test("workspace enforces bill payment ownership, recurrence, and unique periods"
   };
 
   assert.equal(validWorkspace(base), true);
+  assert.equal(
+    validWorkspace({
+      ...base,
+      expenses: [],
+    }),
+    false,
+  );
   assert.equal(
     validWorkspace({
       ...base,

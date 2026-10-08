@@ -22,6 +22,7 @@ export type BillPayment = {
   period: string;
   amount: number;
   paymentDate: string;
+  expenseId: string;
   referenceNumber?: string;
   notes?: string;
 };
@@ -96,6 +97,8 @@ export function validBillsData(billsValue: unknown, paymentsValue: unknown) {
           value.amount > 0 &&
           typeof value.paymentDate === "string" &&
           validDate(value.paymentDate) &&
+          typeof value.expenseId === "string" &&
+          !!value.expenseId &&
           (value.referenceNumber === undefined ||
             typeof value.referenceNumber === "string") &&
           (value.notes === undefined || typeof value.notes === "string")
@@ -145,7 +148,11 @@ export function billOccurrencesForPeriod(
   const asOf = new Date(asOfDate + "T00:00:00Z");
 
   return bills
-    .filter((bill) => bill.active && billOccursInPeriod(bill, period))
+    .filter(
+      (bill) =>
+        billOccursInPeriod(bill, period) &&
+        (bill.active || paymentByBill.has(bill.id)),
+    )
     .map((bill) => {
       const dueDate = billDueDate(bill, period);
       const payment = paymentByBill.get(bill.id);

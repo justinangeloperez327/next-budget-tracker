@@ -20,6 +20,7 @@ CREATE TABLE "BillPayment" (
     "period" TEXT NOT NULL,
     "amount" BIGINT NOT NULL,
     "paymentDate" TEXT NOT NULL,
+    "expenseId" TEXT NOT NULL,
     "referenceNumber" TEXT,
     "notes" TEXT,
 
@@ -29,6 +30,7 @@ CREATE TABLE "BillPayment" (
 CREATE INDEX "RecurringBill_userId_idx" ON "RecurringBill"("userId");
 CREATE UNIQUE INDEX "BillPayment_billId_period_key" ON "BillPayment"("billId", "period");
 CREATE INDEX "BillPayment_billId_paymentDate_idx" ON "BillPayment"("billId", "paymentDate");
+CREATE INDEX "BillPayment_expenseId_idx" ON "BillPayment"("expenseId");
 
 ALTER TABLE "RecurringBill" ADD CONSTRAINT "RecurringBill_userId_fkey"
 FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
