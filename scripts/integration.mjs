@@ -76,9 +76,11 @@ try {
   assert.equal((await request("/budget", { cookie })).status, 200);
   assert.equal((await request("/reports", { cookie })).status, 200);
   assert.equal((await request("/reports/history", { cookie })).status, 200);
+  assert.equal((await request("/sss", { cookie })).status, 200);
   const initial = await (await request("/api/workspace", { cookie })).json();
   assert.equal(initial.user.email, email);
   assert.equal(initial.revision, 0);
+  const sssAccountId = randomUUID();
   const data = {
     expenses: [
       {
@@ -91,6 +93,29 @@ try {
     ],
     budgets: { "2026-10": 9_500_000_000 },
     categoryBudgets: { "2026-10": { Food: 8_500_000_000 } },
+    governmentAccounts: [
+      {
+        id: sssAccountId,
+        provider: "SSS",
+        memberType: "OFW",
+        accountIdentifier: "12-3456789-0",
+        monthlyTarget: 500000,
+        frequency: "Monthly",
+        active: true,
+      },
+    ],
+    governmentContributions: [
+      {
+        id: randomUUID(),
+        accountId: sssAccountId,
+        period: "2026-10",
+        amount: 500000,
+        paymentDate: "2026-10-07",
+        status: "Paid",
+        referenceNumber: "SSS-TEST-001",
+        notes: "Integration test contribution",
+      },
+    ],
   };
   assert.equal(
     (
@@ -133,7 +158,13 @@ try {
   assert.deepEqual(
     (await (await request("/api/workspace", { cookie: secondCookie })).json())
       .data,
-    { expenses: [], budgets: {}, categoryBudgets: {} },
+    {
+      expenses: [],
+      budgets: {},
+      categoryBudgets: {},
+      governmentAccounts: [],
+      governmentContributions: [],
+    },
   );
   assert.equal(
     (
@@ -174,7 +205,13 @@ try {
   assert.deepEqual(
     (await (await request("/api/workspace", { cookie: newCookie })).json())
       .data,
-    { expenses: [], budgets: {}, categoryBudgets: {} },
+    {
+      expenses: [],
+      budgets: {},
+      categoryBudgets: {},
+      governmentAccounts: [],
+      governmentContributions: [],
+    },
   );
   console.log(
     "PASS: registration, session cookies, login/logout, persistence, isolation, deletion, CSRF and stale-write protection.",

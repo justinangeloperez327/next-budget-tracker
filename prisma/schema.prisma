@@ -8,15 +8,16 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  name         String
-  passwordHash String
-  revision     Int       @default(0)
-  createdAt    DateTime  @default(now())
-  sessions     Session[]
-  expenses     Expense[]
-  budgets      Budget[]
+  id                 String              @id @default(uuid())
+  email              String              @unique
+  name               String
+  passwordHash       String
+  revision           Int                 @default(0)
+  createdAt          DateTime            @default(now())
+  sessions           Session[]
+  expenses           Expense[]
+  budgets            Budget[]
+  governmentAccounts GovernmentAccount[]
 }
 
 model Session {
@@ -60,6 +61,36 @@ model BudgetAllocation {
   budget   Budget @relation(fields: [userId, month], references: [userId, month], onDelete: Cascade)
 
   @@id([userId, month, category])
+}
+
+model GovernmentAccount {
+  id                String                   @id
+  userId            String
+  provider          String
+  memberType        String
+  accountIdentifier String?
+  monthlyTarget     BigInt?
+  frequency         String
+  active            Boolean                  @default(true)
+  user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contributions     GovernmentContribution[]
+
+  @@unique([userId, provider])
+  @@index([userId])
+}
+
+model GovernmentContribution {
+  id              String            @id
+  accountId       String
+  period          String
+  amount          BigInt
+  paymentDate     String?
+  status          String
+  referenceNumber String?
+  notes           String?
+  account         GovernmentAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, period])
 }
 
 model AuthAttempt {

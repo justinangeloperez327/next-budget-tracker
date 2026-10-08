@@ -22,6 +22,7 @@ export async function GET() {
           include: {
             expenses: true,
             budgets: { include: { allocations: true } },
+            governmentAccounts: { include: { contributions: true } },
           },
         }),
       { isolationLevel: "RepeatableRead" },
@@ -53,6 +54,36 @@ export async function GET() {
               ),
             ]),
         ),
+        governmentAccounts: snapshot.governmentAccounts.map((account) => ({
+          id: account.id,
+          provider: account.provider,
+          memberType: account.memberType,
+          ...(account.accountIdentifier
+            ? { accountIdentifier: account.accountIdentifier }
+            : {}),
+          ...(account.monthlyTarget === null
+            ? {}
+            : { monthlyTarget: Number(account.monthlyTarget) }),
+          frequency: account.frequency,
+          active: account.active,
+        })),
+        governmentContributions: snapshot.governmentAccounts.flatMap(
+          (account) =>
+            account.contributions.map((contribution) => ({
+              id: contribution.id,
+              accountId: contribution.accountId,
+              period: contribution.period,
+              amount: Number(contribution.amount),
+              ...(contribution.paymentDate
+                ? { paymentDate: contribution.paymentDate }
+                : {}),
+              status: contribution.status,
+              ...(contribution.referenceNumber
+                ? { referenceNumber: contribution.referenceNumber }
+                : {}),
+              ...(contribution.notes ? { notes: contribution.notes } : {}),
+            })),
+        ),
       },
     });
   } catch (error) {
@@ -77,11 +108,13 @@ export async function PUT(request: Request) {
     )
       throw new HttpError(
         400,
-        "Invalid expense or budget data. Maximum 2,000 expenses, 600 budget months, and 4,200 category budgets.",
+        "Invalid workspace data. Check the expense, budget, and contribution limits and field values.",
       );
 
     const data = input.data;
     const categoryBudgets = data.categoryBudgets ?? {};
+    const governmentAccounts = data.governmentAccounts ?? [];
+    const governmentContributions = data.governmentContributions ?? [];
     const revision = Number(input.revision);
     await db().$transaction(async (tx) => {
       const updated = await tx.user.updateMany({
@@ -94,6 +127,7 @@ export async function PUT(request: Request) {
           "Your notebook changed in another tab or device. Reload before editing again.",
         );
 
+      await tx.governmentAccount.deleteMany({ where: { userId: user.id } });
       await tx.expense.deleteMany({ where: { userId: user.id } });
       await tx.budget.deleteMany({ where: { userId: user.id } });
 
@@ -141,6 +175,37 @@ export async function PUT(request: Request) {
       );
       if (allocations.length)
         await tx.budgetAllocation.createMany({ data: allocations });
+
+      if (governmentAccounts.length)
+        await tx.governmentAccount.createMany({
+          data: governmentAccounts.map((account) => ({
+            id: account.id,
+            userId: user.id,
+            provider: account.provider,
+            memberType: account.memberType,
+            accountIdentifier: account.accountIdentifier ?? null,
+            monthlyTarget:
+              account.monthlyTarget === undefined
+                ? null
+                : BigInt(account.monthlyTarget),
+            frequency: account.frequency,
+            active: account.active,
+          })),
+        });
+
+      if (governmentContributions.length)
+        await tx.governmentContribution.createMany({
+          data: governmentContributions.map((contribution) => ({
+            id: contribution.id,
+            accountId: contribution.accountId,
+            period: contribution.period,
+            amount: BigInt(contribution.amount),
+            paymentDate: contribution.paymentDate ?? null,
+            status: contribution.status,
+            referenceNumber: contribution.referenceNumber ?? null,
+            notes: contribution.notes ?? null,
+          })),
+        });
     });
 
     return json({ revision: revision + 1 });

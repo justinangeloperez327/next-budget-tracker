@@ -8,6 +8,7 @@ import {
   HardDrive,
   Target,
   ChartNoAxesColumnIncreasing,
+  Landmark,
 } from "lucide-react";
 import { ThemeControls } from "@/components/theme-controls";
 import { SakuraCat } from "@/components/sakura-companion";
@@ -25,7 +26,23 @@ export function Workspace({ children }: { children: React.ReactNode }) {
         ? "Budget"
         : pathname.startsWith("/reports")
           ? "Reports"
-          : "Overview";
+          : pathname.startsWith("/sss")
+            ? "SSS"
+            : "Overview";
+
+  const navigation = [
+    ["/dashboard", "Dashboard", LayoutDashboard],
+    ["/budget", "Budget vs. actual", Target],
+    ["/expenses", "Expense tracker", Receipt],
+    ["/sss", "SSS tracker", Landmark],
+    ["/reports", "Reports", ChartNoAxesColumnIncreasing],
+  ] as const;
+
+  function isActive(href: string) {
+    if (href === "/reports") return pathname.startsWith("/reports");
+    if (href === "/sss") return pathname.startsWith("/sss");
+    return pathname === href;
+  }
 
   return (
     <div className="min-h-screen md:grid md:grid-cols-[240px_minmax(0,1fr)]">
@@ -44,28 +61,13 @@ export function Workspace({ children }: { children: React.ReactNode }) {
           aria-label="Workspace navigation"
           className="mt-4 flex flex-wrap gap-2 md:flex-col"
         >
-          {(
-            [
-              ["/dashboard", "Dashboard", LayoutDashboard],
-              ["/budget", "Budget vs. actual", Target],
-              ["/expenses", "Expense tracker", Receipt],
-              ["/reports", "Reports", ChartNoAxesColumnIncreasing],
-            ] as const
-          ).map(([href, label, Icon]) => (
+          {navigation.map(([href, label, Icon]) => (
             <Link
               key={href}
               href={href}
-              aria-current={
-                href === "/reports"
-                  ? pathname.startsWith("/reports")
-                    ? "page"
-                    : undefined
-                  : pathname === href
-                    ? "page"
-                    : undefined
-              }
+              aria-current={isActive(href) ? "page" : undefined}
               className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
-                href === "/reports" ? pathname.startsWith("/reports") : pathname === href
+                isActive(href)
                   ? "bg-muted font-medium text-primary"
                   : "text-muted-foreground hover:bg-muted"
               }`}
