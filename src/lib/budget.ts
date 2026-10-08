@@ -29,6 +29,21 @@ export type CategoryBudgetSummary = {
   variance: number;
   status: BudgetVarianceStatus;
 };
+export type MonthlyBudgetReport = {
+  month: string;
+  budget: number;
+  actual: number;
+  variance: number;
+  saved: number;
+  overspent: number;
+  savingsRate: number;
+  budgetUsedRate: number;
+  allocated: number;
+  unallocated: number;
+  categorySaved: number;
+  categoryOverspent: number;
+  categorySummaries: CategoryBudgetSummary[];
+};
 
 export const emptyData: BudgetData = {
   expenses: [],
@@ -113,6 +128,48 @@ export function categoryBudgetSummaries(
         variance > 0 ? "saved" : variance < 0 ? "overspent" : "on-budget",
     };
   });
+}
+
+export function monthlyBudgetReport(
+  data: BudgetData,
+  month: string,
+): MonthlyBudgetReport {
+  const budget = data.budgets[month] ?? 0;
+  const actual = total(
+    data.expenses.filter((expense) => expense.date.startsWith(month)),
+  );
+  const variance = budget - actual;
+  const saved = Math.max(variance, 0);
+  const overspent = Math.max(-variance, 0);
+  const categorySummaries = categoryBudgetSummaries(data, month);
+  const allocated = categorySummaries.reduce(
+    (sum, entry) => sum + entry.budget,
+    0,
+  );
+  const categorySaved = categorySummaries.reduce(
+    (sum, entry) => sum + Math.max(entry.variance, 0),
+    0,
+  );
+  const categoryOverspent = categorySummaries.reduce(
+    (sum, entry) => sum + Math.max(-entry.variance, 0),
+    0,
+  );
+
+  return {
+    month,
+    budget,
+    actual,
+    variance,
+    saved,
+    overspent,
+    savingsRate: budget > 0 ? (saved / budget) * 100 : 0,
+    budgetUsedRate: budget > 0 ? (actual / budget) * 100 : 0,
+    allocated,
+    unallocated: budget - allocated,
+    categorySaved,
+    categoryOverspent,
+    categorySummaries,
+  };
 }
 
 export function money(cents: number) {

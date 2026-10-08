@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   categoryBudgetSummaries,
+  monthlyBudgetReport,
   total,
   validData,
   csv,
@@ -105,6 +106,55 @@ test("category variance is derived from actual expenses", () => {
     variance: 3000,
     status: "saved",
   });
+});
+
+test("monthly report separates net result from category variances", () => {
+  const data: BudgetData = {
+    expenses: [
+      {
+        ...example,
+        id: "housing",
+        description: "Rent",
+        amount: 14000,
+        category: "Housing",
+      },
+      { ...example, id: "food", amount: 7000, category: "Food" },
+      { ...example, id: "transport", amount: 1000, category: "Transport" },
+    ],
+    budgets: { "2026-10": 30000 },
+    categoryBudgets: {
+      "2026-10": { Housing: 15000, Food: 5000 },
+    },
+  };
+
+  const report = monthlyBudgetReport(data, "2026-10");
+
+  assert.equal(report.budget, 30000);
+  assert.equal(report.actual, 22000);
+  assert.equal(report.variance, 8000);
+  assert.equal(report.saved, 8000);
+  assert.equal(report.overspent, 0);
+  assert.equal(report.savingsRate, (8000 / 30000) * 100);
+  assert.equal(report.allocated, 20000);
+  assert.equal(report.unallocated, 10000);
+  assert.equal(report.categorySaved, 1000);
+  assert.equal(report.categoryOverspent, 3000);
+});
+
+test("monthly report records an over-budget month without negative savings", () => {
+  const report = monthlyBudgetReport(
+    {
+      expenses: [{ ...example, amount: 12000 }],
+      budgets: { "2026-10": 10000 },
+      categoryBudgets: { "2026-10": { Food: 10000 } },
+    },
+    "2026-10",
+  );
+
+  assert.equal(report.saved, 0);
+  assert.equal(report.overspent, 2000);
+  assert.equal(report.savingsRate, 0);
+  assert.equal(report.budgetUsedRate, 120);
 });
 
 test("CSV quotes values and neutralises spreadsheet formulas", () => {

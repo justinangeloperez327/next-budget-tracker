@@ -7,6 +7,7 @@ import {
   LogOut,
   HardDrive,
   Target,
+  ChartNoAxesColumnIncreasing,
 } from "lucide-react";
 import { ThemeControls } from "@/components/theme-controls";
 import { SakuraCat } from "@/components/sakura-companion";
@@ -22,7 +23,9 @@ export function Workspace({ children }: { children: React.ReactNode }) {
       ? "Expenses"
       : pathname === "/budget"
         ? "Budget"
-        : "Overview";
+        : pathname === "/reports"
+          ? "Reports"
+          : "Overview";
 
   return (
     <div className="min-h-screen md:grid md:grid-cols-[240px_minmax(0,1fr)]">
@@ -46,6 +49,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
               ["/dashboard", "Dashboard", LayoutDashboard],
               ["/budget", "Budget vs. actual", Target],
               ["/expenses", "Expense tracker", Receipt],
+              ["/reports", "Reports", ChartNoAxesColumnIncreasing],
             ] as const
           ).map(([href, label, Icon]) => (
             <Link
