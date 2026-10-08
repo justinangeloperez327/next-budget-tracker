@@ -1,4 +1,8 @@
-export const governmentProviders = ["SSS"] as const;
+export const governmentProviders = [
+  "SSS",
+  "PHILHEALTH",
+  "PAGIBIG",
+] as const;
 export type GovernmentProvider = (typeof governmentProviders)[number];
 
 export const sssMemberTypes = [
@@ -20,10 +24,47 @@ export const contributionStatuses = [
 ] as const;
 export type ContributionStatus = (typeof contributionStatuses)[number];
 
+export type GovernmentProviderDefinition = {
+  provider: GovernmentProvider;
+  label: string;
+  shortLabel: string;
+  accountIdentifierLabel: string;
+  defaultFrequency: ContributionFrequency;
+  trackerPath?: string;
+};
+
+export const governmentProviderDefinitions: Record<
+  GovernmentProvider,
+  GovernmentProviderDefinition
+> = {
+  SSS: {
+    provider: "SSS",
+    label: "Social Security System",
+    shortLabel: "SSS",
+    accountIdentifierLabel: "SSS number",
+    defaultFrequency: "Monthly",
+    trackerPath: "/sss",
+  },
+  PHILHEALTH: {
+    provider: "PHILHEALTH",
+    label: "Philippine Health Insurance Corporation",
+    shortLabel: "PhilHealth",
+    accountIdentifierLabel: "PhilHealth number",
+    defaultFrequency: "Monthly",
+  },
+  PAGIBIG: {
+    provider: "PAGIBIG",
+    label: "Home Development Mutual Fund",
+    shortLabel: "Pag-IBIG",
+    accountIdentifierLabel: "MID number",
+    defaultFrequency: "Monthly",
+  },
+};
+
 export type GovernmentAccount = {
   id: string;
   provider: GovernmentProvider;
-  memberType: SssMemberType;
+  memberType: string;
   accountIdentifier?: string;
   monthlyTarget?: number;
   frequency: ContributionFrequency;
@@ -41,7 +82,7 @@ export type GovernmentContribution = {
   notes?: string;
 };
 
-export type SssContributionSummary = {
+export type GovernmentContributionSummary = {
   year: number;
   totalPaid: number;
   paidMonths: number;
@@ -50,14 +91,14 @@ export type SssContributionSummary = {
   notRequiredMonths: number;
 };
 
-export type SssContributionHistoryMonth = {
+export type GovernmentContributionHistoryMonth = {
   period: string;
   month: number;
   status: ContributionStatus | "No record";
   contribution?: GovernmentContribution;
 };
 
-export type SssDashboardSnapshot = {
+export type GovernmentContributionDashboardSnapshot = {
   year: number;
   currentPeriod: string;
   ytdPaid: number;
@@ -71,6 +112,11 @@ export type SssDashboardSnapshot = {
   missedPeriods: string[];
 };
 
+export type SssContributionSummary = GovernmentContributionSummary;
+export type SssContributionHistoryMonth = GovernmentContributionHistoryMonth;
+export type SssDashboardSnapshot =
+  GovernmentContributionDashboardSnapshot;
+
 const MONTH_PATTERN = /^(19|20|21)\d{2}-(0[1-9]|1[0-2])$/;
 const DATE_PATTERN = /^(19|20|21)\d{2}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/;
 
@@ -81,6 +127,17 @@ function validDate(value: string) {
     Number.isFinite(date.getTime()) &&
     date.toISOString().slice(0, 10) === value
   );
+}
+
+function validMemberType(provider: GovernmentProvider, value: string) {
+  if (!value.trim() || value.length > 60) return false;
+  if (provider === "SSS")
+    return sssMemberTypes.includes(value as SssMemberType);
+  return true;
+}
+
+export function governmentProviderDefinition(provider: GovernmentProvider) {
+  return governmentProviderDefinitions[provider];
 }
 
 export function validGovernmentData(
@@ -96,7 +153,8 @@ export function validGovernmentData(
         return (
           typeof a.id === "string" &&
           governmentProviders.includes(a.provider) &&
-          sssMemberTypes.includes(a.memberType) &&
+          typeof a.memberType === "string" &&
+          validMemberType(a.provider, a.memberType) &&
           contributionFrequencies.includes(a.frequency) &&
           typeof a.active === "boolean" &&
           (a.accountIdentifier === undefined ||
@@ -134,11 +192,11 @@ export function validGovernmentData(
   return true;
 }
 
-export function sssContributionSummary(
+export function contributionSummary(
   account: GovernmentAccount | undefined,
   contributions: GovernmentContribution[],
   year: number,
-): SssContributionSummary {
+): GovernmentContributionSummary {
   const relevant = account
     ? contributions.filter(
         (contribution) =>
@@ -166,7 +224,7 @@ export function sssContributionSummary(
   };
 }
 
-export function sssContributionYears(
+export function contributionYears(
   account: GovernmentAccount | undefined,
   contributions: GovernmentContribution[],
   currentYear = new Date().getFullYear(),
@@ -181,11 +239,11 @@ export function sssContributionYears(
   return [...new Set([currentYear, ...years])].toSorted((a, b) => b - a);
 }
 
-export function sssContributionYearHistory(
+export function contributionYearHistory(
   account: GovernmentAccount | undefined,
   contributions: GovernmentContribution[],
   year: number,
-): SssContributionHistoryMonth[] {
+): GovernmentContributionHistoryMonth[] {
   const records = new Map(
     (account
       ? contributions.filter(
@@ -210,7 +268,7 @@ export function sssContributionYearHistory(
   });
 }
 
-export function sssExpectedPeriods(
+export function expectedContributionPeriods(
   account: GovernmentAccount | undefined,
   year: number,
 ) {
@@ -225,11 +283,11 @@ export function sssExpectedPeriods(
   );
 }
 
-export function sssDashboardSnapshot(
+export function contributionDashboardSnapshot(
   account: GovernmentAccount | undefined,
   contributions: GovernmentContribution[],
   asOfDate: string,
-): SssDashboardSnapshot {
+): GovernmentContributionDashboardSnapshot {
   const currentPeriod = asOfDate.slice(0, 7);
   const year = Number(currentPeriod.slice(0, 4));
   const accountContributions = account
@@ -237,7 +295,7 @@ export function sssDashboardSnapshot(
         (contribution) => contribution.accountId === account.id,
       )
     : [];
-  const expectedPeriods = sssExpectedPeriods(account, year);
+  const expectedPeriods = expectedContributionPeriods(account, year);
   const contributionByPeriod = new Map(
     accountContributions.map((contribution) => [
       contribution.period,
@@ -279,7 +337,7 @@ export function sssDashboardSnapshot(
     });
 
     if (!nextExpectedPeriod) {
-      nextExpectedPeriod = sssExpectedPeriods(account, year + 1)[0];
+      nextExpectedPeriod = expectedContributionPeriods(account, year + 1)[0];
     }
   }
 
@@ -307,6 +365,12 @@ export function sssDashboardSnapshot(
     missedPeriods,
   };
 }
+
+export const sssContributionSummary = contributionSummary;
+export const sssContributionYears = contributionYears;
+export const sssContributionYearHistory = contributionYearHistory;
+export const sssExpectedPeriods = expectedContributionPeriods;
+export const sssDashboardSnapshot = contributionDashboardSnapshot;
 
 export function phpMoney(centavos: number) {
   return new Intl.NumberFormat("en-PH", {

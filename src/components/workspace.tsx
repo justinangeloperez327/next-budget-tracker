@@ -26,21 +26,24 @@ export function Workspace({ children }: { children: React.ReactNode }) {
         ? "Budget"
         : pathname.startsWith("/reports")
           ? "Reports"
-          : pathname.startsWith("/sss")
-            ? "SSS"
+          : pathname.startsWith("/contributions") || pathname.startsWith("/sss")
+            ? "Contributions"
             : "Overview";
 
   const navigation = [
     ["/dashboard", "Dashboard", LayoutDashboard],
     ["/budget", "Budget vs. actual", Target],
     ["/expenses", "Expense tracker", Receipt],
-    ["/sss", "SSS tracker", Landmark],
+    ["/contributions", "Contributions", Landmark],
     ["/reports", "Reports", ChartNoAxesColumnIncreasing],
   ] as const;
 
   function isActive(href: string) {
     if (href === "/reports") return pathname.startsWith("/reports");
-    if (href === "/sss") return pathname.startsWith("/sss");
+    if (href === "/contributions")
+      return (
+        pathname.startsWith("/contributions") || pathname.startsWith("/sss")
+      );
     return pathname === href;
   }
 

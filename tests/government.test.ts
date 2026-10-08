@@ -1,6 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  contributionDashboardSnapshot,
+  contributionSummary,
+  contributionYearHistory,
+  contributionYears,
+  expectedContributionPeriods,
+  governmentProviderDefinition,
+  governmentProviders,
   phpMoney,
   sssContributionSummary,
   sssDashboardSnapshot,
@@ -48,6 +55,87 @@ const contributions: GovernmentContribution[] = [
     status: "Missed",
   },
 ];
+
+test("government provider registry includes the three shared contribution providers", () => {
+  assert.deepEqual(governmentProviders, ["SSS", "PHILHEALTH", "PAGIBIG"]);
+  assert.equal(governmentProviderDefinition("SSS").shortLabel, "SSS");
+  assert.equal(
+    governmentProviderDefinition("PHILHEALTH").shortLabel,
+    "PhilHealth",
+  );
+  assert.equal(governmentProviderDefinition("PAGIBIG").shortLabel, "Pag-IBIG");
+});
+
+test("shared government account validation supports provider-specific member types", () => {
+  const philHealth: GovernmentAccount = {
+    id: "88888888-8888-4888-8888-888888888888",
+    provider: "PHILHEALTH",
+    memberType: "Direct contributor",
+    frequency: "Monthly",
+    active: true,
+  };
+  const pagIbig: GovernmentAccount = {
+    id: "99999999-9999-4999-8999-999999999999",
+    provider: "PAGIBIG",
+    memberType: "Mandatory",
+    frequency: "Monthly",
+    active: true,
+  };
+
+  assert.equal(validGovernmentData([philHealth, pagIbig], []), true);
+  assert.equal(
+    validGovernmentData([{ ...philHealth, memberType: "" }], []),
+    false,
+  );
+  assert.equal(
+    validGovernmentData([{ ...account, memberType: "Unknown" }], []),
+    false,
+  );
+});
+
+test("generic contribution helpers work independently of provider", () => {
+  const philHealth: GovernmentAccount = {
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    provider: "PHILHEALTH",
+    memberType: "Direct contributor",
+    frequency: "Quarterly",
+    active: true,
+  };
+  const philHealthContribution: GovernmentContribution = {
+    id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    accountId: philHealth.id,
+    period: "2026-03",
+    amount: 300000,
+    paymentDate: "2026-03-18",
+    status: "Paid",
+  };
+
+  assert.equal(
+    contributionSummary(philHealth, [philHealthContribution], 2026).totalPaid,
+    300000,
+  );
+  assert.deepEqual(
+    expectedContributionPeriods(philHealth, 2026),
+    ["2026-03", "2026-06", "2026-09", "2026-12"],
+  );
+  assert.deepEqual(
+    contributionYears(philHealth, [philHealthContribution], 2026),
+    [2026],
+  );
+  assert.equal(
+    contributionYearHistory(philHealth, [philHealthContribution], 2026)[2]
+      .status,
+    "Paid",
+  );
+  assert.equal(
+    contributionDashboardSnapshot(
+      philHealth,
+      [philHealthContribution],
+      "2026-04-01",
+    ).lastPayment?.period,
+    "2026-03",
+  );
+});
 
 test("government contribution values validate", () => {
   assert.equal(validGovernmentData([account], contributions), true);

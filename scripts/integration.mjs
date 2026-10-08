@@ -78,10 +78,13 @@ try {
   assert.equal((await request("/reports/history", { cookie })).status, 200);
   assert.equal((await request("/sss", { cookie })).status, 200);
   assert.equal((await request("/sss/history", { cookie })).status, 200);
+  assert.equal((await request("/contributions", { cookie })).status, 200);
   const initial = await (await request("/api/workspace", { cookie })).json();
   assert.equal(initial.user.email, email);
   assert.equal(initial.revision, 0);
   const sssAccountId = randomUUID();
+  const philHealthAccountId = randomUUID();
+  const pagIbigAccountId = randomUUID();
   const data = {
     expenses: [
       {
@@ -104,6 +107,24 @@ try {
         frequency: "Monthly",
         active: true,
       },
+      {
+        id: philHealthAccountId,
+        provider: "PHILHEALTH",
+        memberType: "Direct contributor",
+        accountIdentifier: "PH-TEST-001",
+        monthlyTarget: 250000,
+        frequency: "Monthly",
+        active: true,
+      },
+      {
+        id: pagIbigAccountId,
+        provider: "PAGIBIG",
+        memberType: "Mandatory",
+        accountIdentifier: "MID-TEST-001",
+        monthlyTarget: 20000,
+        frequency: "Monthly",
+        active: true,
+      },
     ],
     governmentContributions: [
       {
@@ -115,6 +136,23 @@ try {
         status: "Paid",
         referenceNumber: "SSS-TEST-001",
         notes: "Integration test contribution",
+      },
+      {
+        id: randomUUID(),
+        accountId: philHealthAccountId,
+        period: "2026-10",
+        amount: 250000,
+        paymentDate: "2026-10-06",
+        status: "Paid",
+        referenceNumber: "PH-TEST-001",
+      },
+      {
+        id: randomUUID(),
+        accountId: pagIbigAccountId,
+        period: "2026-10",
+        amount: 20000,
+        status: "Pending",
+        notes: "Awaiting payment confirmation",
       },
     ],
   };
