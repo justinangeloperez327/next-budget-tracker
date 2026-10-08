@@ -79,6 +79,8 @@ try {
   assert.equal((await request("/sss", { cookie })).status, 200);
   assert.equal((await request("/sss/history", { cookie })).status, 200);
   assert.equal((await request("/contributions", { cookie })).status, 200);
+  assert.equal((await request("/philhealth", { cookie })).status, 200);
+  assert.equal((await request("/philhealth/history", { cookie })).status, 200);
   const initial = await (await request("/api/workspace", { cookie })).json();
   assert.equal(initial.user.email, email);
   assert.equal(initial.revision, 0);
@@ -110,7 +112,7 @@ try {
       {
         id: philHealthAccountId,
         provider: "PHILHEALTH",
-        memberType: "Direct contributor",
+        memberType: "Direct Contributor",
         accountIdentifier: "PH-TEST-001",
         monthlyTarget: 250000,
         frequency: "Monthly",

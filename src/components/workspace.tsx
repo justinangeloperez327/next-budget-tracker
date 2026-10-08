@@ -26,7 +26,9 @@ export function Workspace({ children }: { children: React.ReactNode }) {
         ? "Budget"
         : pathname.startsWith("/reports")
           ? "Reports"
-          : pathname.startsWith("/contributions") || pathname.startsWith("/sss")
+          : pathname.startsWith("/contributions") ||
+              pathname.startsWith("/sss") ||
+              pathname.startsWith("/philhealth")
             ? "Contributions"
             : "Overview";
 
@@ -42,7 +44,9 @@ export function Workspace({ children }: { children: React.ReactNode }) {
     if (href === "/reports") return pathname.startsWith("/reports");
     if (href === "/contributions")
       return (
-        pathname.startsWith("/contributions") || pathname.startsWith("/sss")
+        pathname.startsWith("/contributions") ||
+        pathname.startsWith("/sss") ||
+        pathname.startsWith("/philhealth")
       );
     return pathname === href;
   }

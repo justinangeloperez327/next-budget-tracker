@@ -13,6 +13,19 @@ export const sssMemberTypes = [
 ] as const;
 export type SssMemberType = (typeof sssMemberTypes)[number];
 
+export const philHealthMemberTypes = [
+  "Direct Contributor",
+  "Employed - Private",
+  "Employed - Government",
+  "Informal / Self-Earning",
+  "OFW / Migrant Worker",
+  "Lifetime Member",
+  "Kasambahay",
+  "Other Direct Contributor",
+  "Indirect Contributor",
+] as const;
+export type PhilHealthMemberType = (typeof philHealthMemberTypes)[number];
+
 export const contributionFrequencies = ["Monthly", "Quarterly"] as const;
 export type ContributionFrequency = (typeof contributionFrequencies)[number];
 
@@ -51,6 +64,7 @@ export const governmentProviderDefinitions: Record<
     shortLabel: "PhilHealth",
     accountIdentifierLabel: "PhilHealth number",
     defaultFrequency: "Monthly",
+    trackerPath: "/philhealth",
   },
   PAGIBIG: {
     provider: "PAGIBIG",
@@ -133,6 +147,8 @@ function validMemberType(provider: GovernmentProvider, value: string) {
   if (!value.trim() || value.length > 60) return false;
   if (provider === "SSS")
     return sssMemberTypes.includes(value as SssMemberType);
+  if (provider === "PHILHEALTH")
+    return philHealthMemberTypes.includes(value as PhilHealthMemberType);
   return true;
 }
 

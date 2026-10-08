@@ -8,6 +8,7 @@ import {
   expectedContributionPeriods,
   governmentProviderDefinition,
   governmentProviders,
+  philHealthMemberTypes,
   phpMoney,
   sssContributionSummary,
   sssDashboardSnapshot,
@@ -70,7 +71,7 @@ test("shared government account validation supports provider-specific member typ
   const philHealth: GovernmentAccount = {
     id: "88888888-8888-4888-8888-888888888888",
     provider: "PHILHEALTH",
-    memberType: "Direct contributor",
+    memberType: "Direct Contributor",
     frequency: "Monthly",
     active: true,
   };
@@ -97,7 +98,7 @@ test("generic contribution helpers work independently of provider", () => {
   const philHealth: GovernmentAccount = {
     id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
     provider: "PHILHEALTH",
-    memberType: "Direct contributor",
+    memberType: "Direct Contributor",
     frequency: "Quarterly",
     active: true,
   };
@@ -135,6 +136,69 @@ test("generic contribution helpers work independently of provider", () => {
     ).lastPayment?.period,
     "2026-03",
   );
+});
+
+test("PhilHealth member categories are provider-specific", () => {
+  assert.ok(philHealthMemberTypes.includes("Direct Contributor"));
+  assert.ok(philHealthMemberTypes.includes("OFW / Migrant Worker"));
+  assert.ok(philHealthMemberTypes.includes("Indirect Contributor"));
+
+  const philHealth: GovernmentAccount = {
+    id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    provider: "PHILHEALTH",
+    memberType: "OFW / Migrant Worker",
+    accountIdentifier: "PH-123456789",
+    monthlyTarget: 250000,
+    frequency: "Monthly",
+    active: true,
+  };
+
+  assert.equal(validGovernmentData([philHealth], []), true);
+  assert.equal(
+    validGovernmentData([{ ...philHealth, memberType: "Unknown" }], []),
+    false,
+  );
+});
+
+test("PhilHealth dashboard uses the shared contribution engine", () => {
+  const philHealth: GovernmentAccount = {
+    id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    provider: "PHILHEALTH",
+    memberType: "OFW / Migrant Worker",
+    monthlyTarget: 250000,
+    frequency: "Monthly",
+    active: true,
+  };
+  const records: GovernmentContribution[] = [
+    {
+      id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+      accountId: philHealth.id,
+      period: "2026-08",
+      amount: 250000,
+      paymentDate: "2026-08-12",
+      status: "Paid",
+      referenceNumber: "PH-REF-001",
+    },
+    {
+      id: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+      accountId: philHealth.id,
+      period: "2026-09",
+      amount: 250000,
+      status: "Pending",
+    },
+  ];
+
+  const dashboard = contributionDashboardSnapshot(
+    philHealth,
+    records,
+    "2026-10-08",
+  );
+
+  assert.equal(dashboard.ytdPaid, 250000);
+  assert.equal(dashboard.lastPayment?.period, "2026-08");
+  assert.equal(dashboard.nextExpectedPeriod, "2026-10");
+  assert.deepEqual(dashboard.pendingPeriods, ["2026-09"]);
+  assert.ok(dashboard.gapPeriods.includes("2026-01"));
 });
 
 test("government contribution values validate", () => {
