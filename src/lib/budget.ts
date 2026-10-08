@@ -18,6 +18,11 @@ import {
   type Debt,
   type DebtPayment,
 } from "./debt.ts";
+import {
+  validSavingsData,
+  type SavingsGoal,
+  type SavingsDeposit,
+} from "./savings.ts";
 
 export const categories = [
   "Housing",
@@ -49,6 +54,8 @@ export type BudgetData = {
   billPayments?: BillPayment[];
   debts?: Debt[];
   debtPayments?: DebtPayment[];
+  savingsGoals?: SavingsGoal[];
+  savingsDeposits?: SavingsDeposit[];
 };
 export type BudgetVarianceStatus = "saved" | "on-budget" | "overspent";
 export type CategoryBudgetSummary = {
@@ -111,6 +118,8 @@ export const emptyData: BudgetData = {
   billPayments: [],
   debts: [],
   debtPayments: [],
+  savingsGoals: [],
+  savingsDeposits: [],
 };
 
 function validCategoryBudgets(value: unknown) {
@@ -160,6 +169,7 @@ export function validData(data: unknown): data is BudgetData {
     validMp2Data(d.mp2Accounts, d.mp2Deposits) &&
     validBillsData(d.recurringBills, d.billPayments) &&
     validDebtData(d.debts, d.debtPayments) &&
+    validSavingsData(d.savingsGoals, d.savingsDeposits) &&
     (d.recurringBills ?? []).every((bill) => categories.includes(bill.category)) &&
     (d.debts ?? []).every((debt) => categories.includes(debt.category))
   );

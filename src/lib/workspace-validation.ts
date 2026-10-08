@@ -12,6 +12,8 @@ const MAX_RECURRING_BILLS = 300;
 const MAX_BILL_PAYMENTS = 5_000;
 const MAX_DEBTS = 500;
 const MAX_DEBT_PAYMENTS = 5_000;
+const MAX_SAVINGS_GOALS = 500;
+const MAX_SAVINGS_DEPOSITS = 10_000;
 const MONTH_PATTERN = /^(19|20|21)\d{2}-(0[1-9]|1[0-2])$/;
 const UUID_PATTERN = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 
@@ -27,6 +29,8 @@ export function validWorkspace(value: unknown): value is BudgetData {
   const billPayments = value.billPayments ?? [];
   const debts = value.debts ?? [];
   const debtPayments = value.debtPayments ?? [];
+  const savingsGoals = value.savingsGoals ?? [];
+  const savingsDeposits = value.savingsDeposits ?? [];
   const budgetMonths = new Set([
     ...Object.keys(value.budgets),
     ...Object.keys(categoryBudgets),
@@ -40,7 +44,9 @@ export function validWorkspace(value: unknown): value is BudgetData {
     recurringBills.length > MAX_RECURRING_BILLS ||
     billPayments.length > MAX_BILL_PAYMENTS ||
     debts.length > MAX_DEBTS ||
-    debtPayments.length > MAX_DEBT_PAYMENTS
+    debtPayments.length > MAX_DEBT_PAYMENTS ||
+    savingsGoals.length > MAX_SAVINGS_GOALS ||
+    savingsDeposits.length > MAX_SAVINGS_DEPOSITS
   )
     return false;
 
@@ -252,6 +258,46 @@ export function validWorkspace(value: unknown): value is BudgetData {
     paidByDebt.set(payment.debtId, nextPaid);
     debtPaymentIds.add(payment.id);
     debtExpenseIds.add(payment.expenseId);
+  }
+
+  const savingsGoalIds = new Set<string>();
+  for (const goal of savingsGoals) {
+    if (
+      !UUID_PATTERN.test(goal.id) ||
+      savingsGoalIds.has(goal.id) ||
+      goal.targetAmount > MAX_AMOUNT ||
+      (goal.monthlyTarget !== undefined && goal.monthlyTarget > MAX_AMOUNT) ||
+      !goal.name.trim() ||
+      goal.name.length > 120 ||
+      (goal.destination !== undefined &&
+        (goal.destination.length > 120 || !goal.destination.trim())) ||
+      (goal.notes !== undefined &&
+        (goal.notes.length > 500 || !goal.notes.trim()))
+    )
+      return false;
+    savingsGoalIds.add(goal.id);
+  }
+
+  const savingsDepositIds = new Set<string>();
+  const savedByGoal = new Map<string, number>();
+  for (const deposit of savingsDeposits) {
+    const goal = savingsGoals.find((entry) => entry.id === deposit.goalId);
+    if (
+      !UUID_PATTERN.test(deposit.id) ||
+      savingsDepositIds.has(deposit.id) ||
+      !goal ||
+      deposit.amount > MAX_AMOUNT ||
+      (deposit.referenceNumber !== undefined &&
+        (deposit.referenceNumber.length > 80 ||
+          !deposit.referenceNumber.trim())) ||
+      (deposit.notes !== undefined &&
+        (deposit.notes.length > 500 || !deposit.notes.trim()))
+    )
+      return false;
+    const nextSaved = (savedByGoal.get(deposit.goalId) ?? 0) + deposit.amount;
+    if (nextSaved > goal.targetAmount) return false;
+    savedByGoal.set(deposit.goalId, nextSaved);
+    savingsDepositIds.add(deposit.id);
   }
 
   return true;
