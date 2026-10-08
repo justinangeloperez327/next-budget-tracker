@@ -19,6 +19,7 @@ model User {
   budgets            Budget[]
   governmentAccounts GovernmentAccount[]
   mp2Accounts        Mp2Account[]
+  recurringBills     RecurringBill[]
 }
 
 model Session {
@@ -120,6 +121,38 @@ model Mp2Deposit {
   account         Mp2Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([accountId, paymentDate])
+}
+
+model RecurringBill {
+  id         String        @id
+  userId     String
+  name       String
+  category   String
+  amount     BigInt
+  frequency  String
+  dueDay     Int
+  startMonth String
+  endMonth   String?
+  active     Boolean       @default(true)
+  notes      String?
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments   BillPayment[]
+
+  @@index([userId])
+}
+
+model BillPayment {
+  id              String        @id
+  billId          String
+  period          String
+  amount          BigInt
+  paymentDate     String
+  referenceNumber String?
+  notes           String?
+  bill            RecurringBill @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@unique([billId, period])
+  @@index([billId, paymentDate])
 }
 
 model AuthAttempt {

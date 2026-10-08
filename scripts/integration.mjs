@@ -85,6 +85,7 @@ try {
   assert.equal((await request("/pagibig/history", { cookie })).status, 200);
   assert.equal((await request("/mp2", { cookie })).status, 200);
   assert.equal((await request("/mp2/history", { cookie })).status, 200);
+  assert.equal((await request("/bills", { cookie })).status, 200);
   const initial = await (await request("/api/workspace", { cookie })).json();
   assert.equal(initial.user.email, email);
   assert.equal(initial.revision, 0);
@@ -92,6 +93,7 @@ try {
   const philHealthAccountId = randomUUID();
   const pagIbigAccountId = randomUUID();
   const mp2AccountId = randomUUID();
+  const rentBillId = randomUUID();
   const data = {
     expenses: [
       {
@@ -183,6 +185,29 @@ try {
         notes: "Integration test MP2 savings",
       },
     ],
+    recurringBills: [
+      {
+        id: rentBillId,
+        name: "Rent",
+        category: "Housing",
+        amount: 190000,
+        frequency: "Monthly",
+        dueDay: 1,
+        startMonth: "2026-01",
+        active: true,
+        notes: "Integration recurring bill",
+      },
+    ],
+    billPayments: [
+      {
+        id: randomUUID(),
+        billId: rentBillId,
+        period: "2026-10",
+        amount: 185000,
+        paymentDate: "2026-10-01",
+        referenceNumber: "RENT-OCT-2026",
+      },
+    ],
   };
   assert.equal(
     (
@@ -233,6 +258,8 @@ try {
       governmentContributions: [],
       mp2Accounts: [],
       mp2Deposits: [],
+      recurringBills: [],
+      billPayments: [],
     },
   );
   assert.equal(
@@ -282,6 +309,8 @@ try {
       governmentContributions: [],
       mp2Accounts: [],
       mp2Deposits: [],
+      recurringBills: [],
+      billPayments: [],
     },
   );
   console.log(

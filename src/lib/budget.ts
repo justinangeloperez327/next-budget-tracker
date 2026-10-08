@@ -8,6 +8,11 @@ import {
   type Mp2Account,
   type Mp2Deposit,
 } from "./mp2.ts";
+import {
+  validBillsData,
+  type RecurringBill,
+  type BillPayment,
+} from "./bills.ts";
 
 export const categories = [
   "Housing",
@@ -35,6 +40,8 @@ export type BudgetData = {
   governmentContributions?: GovernmentContribution[];
   mp2Accounts?: Mp2Account[];
   mp2Deposits?: Mp2Deposit[];
+  recurringBills?: RecurringBill[];
+  billPayments?: BillPayment[];
 };
 export type BudgetVarianceStatus = "saved" | "on-budget" | "overspent";
 export type CategoryBudgetSummary = {
@@ -93,6 +100,8 @@ export const emptyData: BudgetData = {
   governmentContributions: [],
   mp2Accounts: [],
   mp2Deposits: [],
+  recurringBills: [],
+  billPayments: [],
 };
 
 function validCategoryBudgets(value: unknown) {
@@ -139,7 +148,9 @@ export function validData(data: unknown): data is BudgetData {
       d.governmentAccounts,
       d.governmentContributions,
     ) &&
-    validMp2Data(d.mp2Accounts, d.mp2Deposits)
+    validMp2Data(d.mp2Accounts, d.mp2Deposits) &&
+    validBillsData(d.recurringBills, d.billPayments) &&
+    (d.recurringBills ?? []).every((bill) => categories.includes(bill.category))
   );
 }
 

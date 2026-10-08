@@ -1,4 +1,5 @@
 import { validData, type BudgetData } from "./budget.ts";
+import { billOccursInPeriod } from "./bills.ts";
 
 const MAX_AMOUNT = 9_999_999_900;
 const MAX_BUDGET_MONTHS = 600;
@@ -7,6 +8,8 @@ const MAX_GOVERNMENT_ACCOUNTS = 12;
 const MAX_GOVERNMENT_CONTRIBUTIONS = 1_200;
 const MAX_MP2_ACCOUNTS = 24;
 const MAX_MP2_DEPOSITS = 5_000;
+const MAX_RECURRING_BILLS = 300;
+const MAX_BILL_PAYMENTS = 5_000;
 const MONTH_PATTERN = /^(19|20|21)\d{2}-(0[1-9]|1[0-2])$/;
 const UUID_PATTERN = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 
@@ -18,6 +21,8 @@ export function validWorkspace(value: unknown): value is BudgetData {
   const governmentContributions = value.governmentContributions ?? [];
   const mp2Accounts = value.mp2Accounts ?? [];
   const mp2Deposits = value.mp2Deposits ?? [];
+  const recurringBills = value.recurringBills ?? [];
+  const billPayments = value.billPayments ?? [];
   const budgetMonths = new Set([
     ...Object.keys(value.budgets),
     ...Object.keys(categoryBudgets),
@@ -27,7 +32,9 @@ export function validWorkspace(value: unknown): value is BudgetData {
     governmentAccounts.length > MAX_GOVERNMENT_ACCOUNTS ||
     governmentContributions.length > MAX_GOVERNMENT_CONTRIBUTIONS ||
     mp2Accounts.length > MAX_MP2_ACCOUNTS ||
-    mp2Deposits.length > MAX_MP2_DEPOSITS
+    mp2Deposits.length > MAX_MP2_DEPOSITS ||
+    recurringBills.length > MAX_RECURRING_BILLS ||
+    billPayments.length > MAX_BILL_PAYMENTS
   )
     return false;
 
@@ -142,6 +149,46 @@ export function validWorkspace(value: unknown): value is BudgetData {
     )
       return false;
     mp2DepositIds.add(deposit.id);
+  }
+
+  const billIds = new Set<string>();
+  for (const bill of recurringBills) {
+    if (
+      !UUID_PATTERN.test(bill.id) ||
+      billIds.has(bill.id) ||
+      bill.amount > MAX_AMOUNT ||
+      !bill.name.trim() ||
+      bill.name.length > 100 ||
+      (bill.notes !== undefined &&
+        (bill.notes.length > 500 || !bill.notes.trim()))
+    )
+      return false;
+    billIds.add(bill.id);
+  }
+
+  const billPaymentIds = new Set<string>();
+  const paidPeriods = new Set<string>();
+  for (const payment of billPayments) {
+    const periodKey = payment.billId + ":" + payment.period;
+    if (
+      !UUID_PATTERN.test(payment.id) ||
+      billPaymentIds.has(payment.id) ||
+      paidPeriods.has(periodKey) ||
+      !billIds.has(payment.billId) ||
+      !billOccursInPeriod(
+        recurringBills.find((bill) => bill.id === payment.billId)!,
+        payment.period,
+      ) ||
+      payment.amount > MAX_AMOUNT ||
+      (payment.referenceNumber !== undefined &&
+        (payment.referenceNumber.length > 80 ||
+          !payment.referenceNumber.trim())) ||
+      (payment.notes !== undefined &&
+        (payment.notes.length > 500 || !payment.notes.trim()))
+    )
+      return false;
+    billPaymentIds.add(payment.id);
+    paidPeriods.add(periodKey);
   }
 
   return true;

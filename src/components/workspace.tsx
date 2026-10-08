@@ -9,6 +9,7 @@ import {
   Target,
   ChartNoAxesColumnIncreasing,
   Landmark,
+  CalendarDays,
 } from "lucide-react";
 import { ThemeControls } from "@/components/theme-controls";
 import { SakuraCat } from "@/components/sakura-companion";
@@ -22,7 +23,9 @@ export function Workspace({ children }: { children: React.ReactNode }) {
   const section =
     pathname === "/expenses"
       ? "Expenses"
-      : pathname === "/budget"
+      : pathname.startsWith("/bills")
+        ? "Bills"
+        : pathname === "/budget"
         ? "Budget"
         : pathname.startsWith("/reports")
           ? "Reports"
@@ -38,12 +41,14 @@ export function Workspace({ children }: { children: React.ReactNode }) {
     ["/dashboard", "Dashboard", LayoutDashboard],
     ["/budget", "Budget vs. actual", Target],
     ["/expenses", "Expense tracker", Receipt],
+    ["/bills", "Bills & recurring", CalendarDays],
     ["/contributions", "Contributions", Landmark],
     ["/reports", "Reports", ChartNoAxesColumnIncreasing],
   ] as const;
 
   function isActive(href: string) {
     if (href === "/reports") return pathname.startsWith("/reports");
+    if (href === "/bills") return pathname.startsWith("/bills");
     if (href === "/contributions")
       return (
         pathname.startsWith("/contributions") ||
