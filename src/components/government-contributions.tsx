@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Landmark } from "lucide-react";
+import { ArrowRight, Landmark, PiggyBank } from "lucide-react";
 import { useBudget } from "@/components/budget-provider";
 import {
   contributionSummary,
@@ -17,6 +17,9 @@ export function GovernmentContributions() {
   const year = new Date().getFullYear();
   const accounts = data.governmentAccounts ?? [];
   const contributions = data.governmentContributions ?? [];
+  const mp2Accounts = data.mp2Accounts ?? [];
+  const mp2Deposits = data.mp2Deposits ?? [];
+  const mp2Saved = mp2Deposits.reduce((sum, entry) => sum + entry.amount, 0);
 
   const providers = governmentProviders.map((provider) => {
     const definition = governmentProviderDefinitions[provider];
@@ -44,9 +47,8 @@ export function GovernmentContributions() {
           Contribution accounts
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Keep SSS, PhilHealth, and Pag-IBIG contribution records under one
-          account-based structure while each provider keeps its own membership
-          profile and history.
+          Keep SSS, PhilHealth, Pag-IBIG Membership Savings, and MP2 savings
+          together while each program keeps its own account rules and history.
         </p>
       </div>
 
@@ -170,13 +172,48 @@ export function GovernmentContributions() {
       </div>
 
       <Card className="mt-6">
+        <CardHeader>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-base font-medium">MP2 Savings</CardTitle>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                Modified Pag-IBIG II voluntary savings
+              </p>
+            </div>
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-primary">
+              <PiggyBank size={17} />
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-xs text-muted-foreground">Accounts</p>
+              <p className="mt-1 font-medium tabular-nums">{mp2Accounts.length}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Recorded savings</p>
+              <p className="mt-1 font-medium tabular-nums">{phpMoney(mp2Saved)}</p>
+            </div>
+          </div>
+          <Button asChild variant="outline" className="w-full">
+            <Link href="/mp2">
+              Open MP2 Savings
+              <ArrowRight size={15} />
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
         <CardContent className="py-5">
           <p className="text-sm font-medium">Shared contribution rules</p>
           <p className="mt-2 text-xs leading-5 text-muted-foreground">
-            All three providers use the same contribution record format:
-            contribution period, amount, payment date, status, reference number,
-            and notes. Provider-specific official contribution calculations are
-            kept separate from this shared record layer.
+            SSS, PhilHealth, and Pag-IBIG Membership Savings use the shared
+            contribution record format. MP2 is kept separate because it has its
+            own savings accounts, dividend option, and five-year maturity
+            lifecycle. Official rate and dividend calculations stay outside the
+            tracker.
           </p>
         </CardContent>
       </Card>

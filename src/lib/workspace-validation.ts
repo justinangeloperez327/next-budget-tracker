@@ -5,6 +5,8 @@ const MAX_BUDGET_MONTHS = 600;
 const MAX_CATEGORY_BUDGETS = 4_200;
 const MAX_GOVERNMENT_ACCOUNTS = 12;
 const MAX_GOVERNMENT_CONTRIBUTIONS = 1_200;
+const MAX_MP2_ACCOUNTS = 24;
+const MAX_MP2_DEPOSITS = 5_000;
 const MONTH_PATTERN = /^(19|20|21)\d{2}-(0[1-9]|1[0-2])$/;
 const UUID_PATTERN = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 
@@ -14,6 +16,8 @@ export function validWorkspace(value: unknown): value is BudgetData {
   const categoryBudgets = value.categoryBudgets ?? {};
   const governmentAccounts = value.governmentAccounts ?? [];
   const governmentContributions = value.governmentContributions ?? [];
+  const mp2Accounts = value.mp2Accounts ?? [];
+  const mp2Deposits = value.mp2Deposits ?? [];
   const budgetMonths = new Set([
     ...Object.keys(value.budgets),
     ...Object.keys(categoryBudgets),
@@ -21,7 +25,9 @@ export function validWorkspace(value: unknown): value is BudgetData {
   if (budgetMonths.size > MAX_BUDGET_MONTHS) return false;
   if (
     governmentAccounts.length > MAX_GOVERNMENT_ACCOUNTS ||
-    governmentContributions.length > MAX_GOVERNMENT_CONTRIBUTIONS
+    governmentContributions.length > MAX_GOVERNMENT_CONTRIBUTIONS ||
+    mp2Accounts.length > MAX_MP2_ACCOUNTS ||
+    mp2Deposits.length > MAX_MP2_DEPOSITS
   )
     return false;
 
@@ -99,6 +105,43 @@ export function validWorkspace(value: unknown): value is BudgetData {
       return false;
     contributionIds.add(contribution.id);
     contributionPeriods.add(periodKey);
+  }
+
+  const mp2AccountIds = new Set<string>();
+  const mp2AccountNumbers = new Set<string>();
+  for (const account of mp2Accounts) {
+    const accountNumber = account.accountNumber?.trim();
+    if (
+      !UUID_PATTERN.test(account.id) ||
+      mp2AccountIds.has(account.id) ||
+      !account.name.trim() ||
+      account.name.length > 80 ||
+      (accountNumber !== undefined &&
+        (!accountNumber || accountNumber.length > 40)) ||
+      (accountNumber !== undefined && mp2AccountNumbers.has(accountNumber)) ||
+      (account.monthlyTarget !== undefined &&
+        account.monthlyTarget > MAX_AMOUNT)
+    )
+      return false;
+    mp2AccountIds.add(account.id);
+    if (accountNumber !== undefined) mp2AccountNumbers.add(accountNumber);
+  }
+
+  const mp2DepositIds = new Set<string>();
+  for (const deposit of mp2Deposits) {
+    if (
+      !UUID_PATTERN.test(deposit.id) ||
+      mp2DepositIds.has(deposit.id) ||
+      !mp2AccountIds.has(deposit.accountId) ||
+      deposit.amount > MAX_AMOUNT ||
+      (deposit.referenceNumber !== undefined &&
+        (deposit.referenceNumber.length > 80 ||
+          !deposit.referenceNumber.trim())) ||
+      (deposit.notes !== undefined &&
+        (deposit.notes.length > 500 || !deposit.notes.trim()))
+    )
+      return false;
+    mp2DepositIds.add(deposit.id);
   }
 
   return true;

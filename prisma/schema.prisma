@@ -18,6 +18,7 @@ model User {
   expenses           Expense[]
   budgets            Budget[]
   governmentAccounts GovernmentAccount[]
+  mp2Accounts        Mp2Account[]
 }
 
 model Session {
@@ -91,6 +92,34 @@ model GovernmentContribution {
   account         GovernmentAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@unique([accountId, period])
+}
+
+model Mp2Account {
+  id                 String       @id
+  userId             String
+  name               String
+  accountNumber      String?
+  dividendOption     String
+  initialPaymentDate String?
+  monthlyTarget      BigInt?
+  active             Boolean      @default(true)
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deposits           Mp2Deposit[]
+
+  @@unique([userId, accountNumber])
+  @@index([userId])
+}
+
+model Mp2Deposit {
+  id              String     @id
+  accountId       String
+  paymentDate     String
+  amount          BigInt
+  referenceNumber String?
+  notes           String?
+  account         Mp2Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, paymentDate])
 }
 
 model AuthAttempt {

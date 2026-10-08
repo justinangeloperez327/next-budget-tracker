@@ -23,6 +23,7 @@ export async function GET() {
             expenses: true,
             budgets: { include: { allocations: true } },
             governmentAccounts: { include: { contributions: true } },
+            mp2Accounts: { include: { deposits: true } },
           },
         }),
       { isolationLevel: "RepeatableRead" },
@@ -84,6 +85,33 @@ export async function GET() {
               ...(contribution.notes ? { notes: contribution.notes } : {}),
             })),
         ),
+        mp2Accounts: snapshot.mp2Accounts.map((account) => ({
+          id: account.id,
+          name: account.name,
+          ...(account.accountNumber
+            ? { accountNumber: account.accountNumber }
+            : {}),
+          dividendOption: account.dividendOption,
+          ...(account.initialPaymentDate
+            ? { initialPaymentDate: account.initialPaymentDate }
+            : {}),
+          ...(account.monthlyTarget === null
+            ? {}
+            : { monthlyTarget: Number(account.monthlyTarget) }),
+          active: account.active,
+        })),
+        mp2Deposits: snapshot.mp2Accounts.flatMap((account) =>
+          account.deposits.map((deposit) => ({
+            id: deposit.id,
+            accountId: deposit.accountId,
+            paymentDate: deposit.paymentDate,
+            amount: Number(deposit.amount),
+            ...(deposit.referenceNumber
+              ? { referenceNumber: deposit.referenceNumber }
+              : {}),
+            ...(deposit.notes ? { notes: deposit.notes } : {}),
+          })),
+        ),
       },
     });
   } catch (error) {
@@ -115,6 +143,8 @@ export async function PUT(request: Request) {
     const categoryBudgets = data.categoryBudgets ?? {};
     const governmentAccounts = data.governmentAccounts ?? [];
     const governmentContributions = data.governmentContributions ?? [];
+    const mp2Accounts = data.mp2Accounts ?? [];
+    const mp2Deposits = data.mp2Deposits ?? [];
     const revision = Number(input.revision);
     await db().$transaction(async (tx) => {
       const updated = await tx.user.updateMany({
@@ -127,6 +157,7 @@ export async function PUT(request: Request) {
           "Your notebook changed in another tab or device. Reload before editing again.",
         );
 
+      await tx.mp2Account.deleteMany({ where: { userId: user.id } });
       await tx.governmentAccount.deleteMany({ where: { userId: user.id } });
       await tx.expense.deleteMany({ where: { userId: user.id } });
       await tx.budget.deleteMany({ where: { userId: user.id } });
@@ -204,6 +235,35 @@ export async function PUT(request: Request) {
             status: contribution.status,
             referenceNumber: contribution.referenceNumber ?? null,
             notes: contribution.notes ?? null,
+          })),
+        });
+
+      if (mp2Accounts.length)
+        await tx.mp2Account.createMany({
+          data: mp2Accounts.map((account) => ({
+            id: account.id,
+            userId: user.id,
+            name: account.name,
+            accountNumber: account.accountNumber ?? null,
+            dividendOption: account.dividendOption,
+            initialPaymentDate: account.initialPaymentDate ?? null,
+            monthlyTarget:
+              account.monthlyTarget === undefined
+                ? null
+                : BigInt(account.monthlyTarget),
+            active: account.active,
+          })),
+        });
+
+      if (mp2Deposits.length)
+        await tx.mp2Deposit.createMany({
+          data: mp2Deposits.map((deposit) => ({
+            id: deposit.id,
+            accountId: deposit.accountId,
+            paymentDate: deposit.paymentDate,
+            amount: BigInt(deposit.amount),
+            referenceNumber: deposit.referenceNumber ?? null,
+            notes: deposit.notes ?? null,
           })),
         });
     });

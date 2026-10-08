@@ -83,12 +83,15 @@ try {
   assert.equal((await request("/philhealth/history", { cookie })).status, 200);
   assert.equal((await request("/pagibig", { cookie })).status, 200);
   assert.equal((await request("/pagibig/history", { cookie })).status, 200);
+  assert.equal((await request("/mp2", { cookie })).status, 200);
+  assert.equal((await request("/mp2/history", { cookie })).status, 200);
   const initial = await (await request("/api/workspace", { cookie })).json();
   assert.equal(initial.user.email, email);
   assert.equal(initial.revision, 0);
   const sssAccountId = randomUUID();
   const philHealthAccountId = randomUUID();
   const pagIbigAccountId = randomUUID();
+  const mp2AccountId = randomUUID();
   const data = {
     expenses: [
       {
@@ -159,6 +162,27 @@ try {
         notes: "Awaiting payment confirmation",
       },
     ],
+    mp2Accounts: [
+      {
+        id: mp2AccountId,
+        name: "MP2 Retirement",
+        accountNumber: "MP2-TEST-001",
+        dividendOption: "Compounded",
+        initialPaymentDate: "2026-10-01",
+        monthlyTarget: 100000,
+        active: true,
+      },
+    ],
+    mp2Deposits: [
+      {
+        id: randomUUID(),
+        accountId: mp2AccountId,
+        paymentDate: "2026-10-07",
+        amount: 100000,
+        referenceNumber: "MP2-PAY-001",
+        notes: "Integration test MP2 savings",
+      },
+    ],
   };
   assert.equal(
     (
@@ -207,6 +231,8 @@ try {
       categoryBudgets: {},
       governmentAccounts: [],
       governmentContributions: [],
+      mp2Accounts: [],
+      mp2Deposits: [],
     },
   );
   assert.equal(
@@ -254,6 +280,8 @@ try {
       categoryBudgets: {},
       governmentAccounts: [],
       governmentContributions: [],
+      mp2Accounts: [],
+      mp2Deposits: [],
     },
   );
   console.log(

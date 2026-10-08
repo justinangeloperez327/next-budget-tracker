@@ -3,6 +3,11 @@ import {
   type GovernmentAccount,
   type GovernmentContribution,
 } from "./government.ts";
+import {
+  validMp2Data,
+  type Mp2Account,
+  type Mp2Deposit,
+} from "./mp2.ts";
 
 export const categories = [
   "Housing",
@@ -28,6 +33,8 @@ export type BudgetData = {
   categoryBudgets?: Record<string, CategoryBudget>;
   governmentAccounts?: GovernmentAccount[];
   governmentContributions?: GovernmentContribution[];
+  mp2Accounts?: Mp2Account[];
+  mp2Deposits?: Mp2Deposit[];
 };
 export type BudgetVarianceStatus = "saved" | "on-budget" | "overspent";
 export type CategoryBudgetSummary = {
@@ -84,6 +91,8 @@ export const emptyData: BudgetData = {
   categoryBudgets: {},
   governmentAccounts: [],
   governmentContributions: [],
+  mp2Accounts: [],
+  mp2Deposits: [],
 };
 
 function validCategoryBudgets(value: unknown) {
@@ -129,7 +138,8 @@ export function validData(data: unknown): data is BudgetData {
     validGovernmentData(
       d.governmentAccounts,
       d.governmentContributions,
-    )
+    ) &&
+    validMp2Data(d.mp2Accounts, d.mp2Deposits)
   );
 }
 
