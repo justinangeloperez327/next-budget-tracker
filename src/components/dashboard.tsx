@@ -6,6 +6,7 @@ import {
   HandCoins,
   PiggyBank,
   Send,
+  BellRing,
   Wallet,
   Receipt,
   Target,
@@ -18,6 +19,7 @@ import { billOccurrencesForPeriod } from "@/lib/bills";
 import { debtDashboardSnapshot } from "@/lib/debt";
 import { savingsDashboardSnapshot } from "@/lib/savings";
 import { remittanceMonthSummary } from "@/lib/remittance";
+import { financialReminders, reminderSummary } from "@/lib/reminders";
 import { ExpenseEditor } from "@/components/expense-editor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -56,6 +58,8 @@ export function Dashboard() {
     data.remittances ?? [],
     month,
   );
+  const reminders = financialReminders(data, today);
+  const remindersSummary = reminderSummary(reminders);
   const spent = total(expenses),
     budget = data.budgets[month] || 0;
   const [status, setStatus] = useState("");
@@ -156,6 +160,17 @@ export function Dashboard() {
               ? `${remittanceSummary.pendingCount} transfer${remittanceSummary.pendingCount === 1 ? "" : "s"} pending · ${money(remittanceSummary.feeAmount)} fees`
               : `${remittanceSummary.count} transfer${remittanceSummary.count === 1 ? "" : "s"} · ${money(remittanceSummary.feeAmount)} fees`,
           },
+          {
+            label: "Reminders",
+            value: String(remindersSummary.total),
+            icon: BellRing,
+            color: remindersSummary.overdue
+              ? "var(--destructive)"
+              : "var(--primary)",
+            description: remindersSummary.overdue
+              ? `${remindersSummary.overdue} overdue · ${remindersSummary.dueSoon} due soon`
+              : `${remindersSummary.dueSoon} due soon · ${remindersSummary.pending} pending`,
+          },
         ].map(({ label, value, icon, color, description }, index) => (
           <SpotlightCard
             key={label}
@@ -171,6 +186,14 @@ export function Dashboard() {
             </p>
           </SpotlightCard>
         ))}
+      </div>
+      <div className="mt-4 flex justify-end">
+        <Link
+          href="/reminders"
+          className="text-sm underline underline-offset-4"
+        >
+          Review reminders
+        </Link>
       </div>
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Card>

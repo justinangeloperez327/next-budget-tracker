@@ -92,6 +92,7 @@ try {
   assert.equal((await request("/remittances", { cookie })).status, 200);
   assert.equal((await request("/remittances/history", { cookie })).status, 200);
   assert.equal((await request("/financial", { cookie })).status, 200);
+  assert.equal((await request("/reminders", { cookie })).status, 200);
   const initial = await (await request("/api/workspace", { cookie })).json();
   assert.equal(initial.user.email, email);
   assert.equal(initial.revision, 0);
