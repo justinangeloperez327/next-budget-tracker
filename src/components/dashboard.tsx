@@ -207,6 +207,7 @@ export function Dashboard() {
               className="space-y-3"
               onSubmit={async (e) => {
                 e.preventDefault();
+                setStatus("");
                 const cents = Math.round(
                   Number(new FormData(e.currentTarget).get("budget")) * 100,
                 );

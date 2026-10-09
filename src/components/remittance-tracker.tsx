@@ -145,7 +145,7 @@ export function RemittanceTracker() {
     if (expenseId) {
       const expense: Expense = {
         id: expenseId,
-        description: `Remittance · ${recipient}`,
+        description: `Remittance · ${recipient}`.slice(0, 120),
         amount: expenseAmount,
         category,
         date: transferDate,

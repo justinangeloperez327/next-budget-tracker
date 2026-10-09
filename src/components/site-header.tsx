@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Flower2, ArrowUpRight, LogOut, LayoutDashboard } from "lucide-react";
 import { ThemeControls } from "@/components/theme-controls";
 import { Button } from "@/components/ui/button";
@@ -30,16 +30,23 @@ export function SiteHeader({ account }: { account: PublicAccount | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
+  const busy = useRef(false);
 
   async function signOut() {
-    if (signingOut) return;
+    if (busy.current) return;
+    busy.current = true;
+    setSignOutError("");
     setSigningOut(true);
     try {
       const response = await fetch("/api/auth/logout", { method: "POST" });
       if (!response.ok) throw new Error("Unable to sign out.");
       router.replace("/login");
       router.refresh();
+    } catch {
+      setSignOutError("Sign out failed. Please try again.");
     } finally {
+      busy.current = false;
       setSigningOut(false);
     }
   }
@@ -48,6 +55,11 @@ export function SiteHeader({ account }: { account: PublicAccount | null }) {
     <header className="border-b bg-card">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:flex-nowrap sm:px-6">
         <Brand />
+        {signOutError ? (
+          <p role="alert" className="text-sm text-destructive">
+            {signOutError}
+          </p>
+        ) : null}
         <nav
           aria-label="Main navigation"
           className="no-scrollbar -mx-1 flex w-[calc(100%+0.5rem)] items-center gap-1 overflow-x-auto px-1 text-sm sm:mx-0 sm:w-auto sm:overflow-visible sm:px-0"

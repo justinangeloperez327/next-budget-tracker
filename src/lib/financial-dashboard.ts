@@ -1,7 +1,4 @@
-import {
-  monthlyBudgetReport,
-  type BudgetData,
-} from "./budget.ts";
+import { monthlyBudgetReport, type BudgetData } from "./budget.ts";
 import { billDashboardSnapshot } from "./bills.ts";
 import { debtDashboardSnapshot } from "./debt.ts";
 import { savingsDashboardSnapshot } from "./savings.ts";
@@ -32,23 +29,31 @@ export function financialDashboardSnapshot(
   month: string,
   today: string,
 ) {
-  const asOfDate =
-    month === today.slice(0, 7) ? today : monthEndDate(month);
+  const asOfDate = month === today.slice(0, 7) ? today : monthEndDate(month);
 
+  const selectedMonthEnd = monthEndDate(month);
   const budget = monthlyBudgetReport(data, month);
   const bills = billDashboardSnapshot(
     data.recurringBills ?? [],
-    data.billPayments ?? [],
+    (data.billPayments ?? []).filter(
+      (payment) => payment.paymentDate <= selectedMonthEnd,
+    ),
     asOfDate,
   );
   const debts = debtDashboardSnapshot(
-    data.debts ?? [],
-    data.debtPayments ?? [],
+    (data.debts ?? []).filter((debt) => debt.startDate <= selectedMonthEnd),
+    (data.debtPayments ?? []).filter(
+      (payment) => payment.paymentDate <= selectedMonthEnd,
+    ),
     asOfDate,
   );
   const savings = savingsDashboardSnapshot(
-    data.savingsGoals ?? [],
-    data.savingsDeposits ?? [],
+    (data.savingsGoals ?? []).filter(
+      (goal) => goal.startDate <= selectedMonthEnd,
+    ),
+    (data.savingsDeposits ?? []).filter(
+      (deposit) => deposit.depositDate <= selectedMonthEnd,
+    ),
     asOfDate,
   );
   const remittances = remittanceMonthSummary(data.remittances ?? [], month);
@@ -72,12 +77,12 @@ export function financialDashboardSnapshot(
         snapshot.gapPeriods.length +
         snapshot.pendingPeriods.length +
         snapshot.missedPeriods.length,
-      href: governmentProviderDefinitions[provider].trackerPath ?? "/contributions",
+      href:
+        governmentProviderDefinitions[provider].trackerPath ?? "/contributions",
     };
   });
 
   const selectedYear = month.slice(0, 4);
-  const selectedMonthEnd = monthEndDate(month);
   const mp2Snapshots = (data.mp2Accounts ?? []).map((account) =>
     mp2AccountSnapshot(
       account,

@@ -158,9 +158,4 @@ export function remittanceMonthlyHistory(
   });
 }
 
-export function phpMoney(centavos: number) {
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-  }).format(centavos / 100);
-}
+export { phpMoney } from "./government.ts";

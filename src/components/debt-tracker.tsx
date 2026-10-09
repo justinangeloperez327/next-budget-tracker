@@ -126,7 +126,7 @@ export function DebtTracker() {
         linkedExpenseIds.has(expense.id)
           ? {
               ...expense,
-              description: `Debt payment · ${debt.name}`,
+              description: `Debt payment · ${debt.name}`.slice(0, 120),
               category: debt.category,
             }
           : expense,
@@ -188,7 +188,7 @@ export function DebtTracker() {
     };
     const expense: Expense = {
       id: expenseId,
-      description: `Debt payment · ${debt.name}`,
+      description: `Debt payment · ${debt.name}`.slice(0, 120),
       amount,
       category: debt.category,
       date: paymentDate,

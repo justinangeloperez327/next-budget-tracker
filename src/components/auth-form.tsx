@@ -1,6 +1,6 @@
 "use client";
 import { SakuraCat } from "@/components/sakura-companion";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -17,13 +17,20 @@ export function AuthForm({ register = false }: { register?: boolean }) {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
+  const submitting = useRef(false);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPending(true);
+    if (submitting.current) return;
     setMessage("");
     const data = new FormData(event.currentTarget);
     const email = String(data.get("email")),
       password = String(data.get("password"));
+    if (register && password !== String(data.get("confirm-password"))) {
+      setMessage("Passwords do not match.");
+      return;
+    }
+    submitting.current = true;
+    setPending(true);
     try {
       const response = await fetch(
         `/api/auth/${register ? "register" : "login"}`,
@@ -40,7 +47,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
       const result = await response.json();
       if (!response.ok)
         throw Error(result.error || "Account access failed. Try again.");
-      router.push("/dashboard");
+      router.replace("/dashboard");
       router.refresh();
     } catch (error) {
       setMessage(
@@ -49,6 +56,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
           : "Unable to connect. Please try again.",
       );
     } finally {
+      submitting.current = false;
       setPending(false);
     }
   }
@@ -104,7 +112,21 @@ export function AuthForm({ register = false }: { register?: boolean }) {
                 required
               />
             </div>
-            <p role="status" className="text-sm">
+            {register && (
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm password</Label>
+                <Input
+                  id="confirm-password"
+                  name="confirm-password"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={8}
+                  maxLength={256}
+                  required
+                />
+              </div>
+            )}
+            <p role="status" className="text-sm text-destructive">
               {message}
             </p>
             <Button className="w-full" disabled={pending}>

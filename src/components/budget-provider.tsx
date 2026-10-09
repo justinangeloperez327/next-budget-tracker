@@ -2,9 +2,12 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { emptyData, validData, type BudgetData } from "@/lib/budget";
+import { validWorkspace } from "@/lib/workspace-validation";
 type Context = {
   data: BudgetData;
   ready: boolean;
+  loaded: boolean;
+  saveError: string;
   email: string | null;
   error: string;
   saving: boolean;
@@ -16,6 +19,8 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [data, setData] = useState<BudgetData>(emptyData);
   const [ready, setReady] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [email, setEmail] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -33,11 +38,17 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         if (!response.ok)
           throw Error(result.error || "Your workspace could not be loaded.");
         if (controller.signal.aborted) return;
-        if (!result.user?.email || !validData(result.data))
+        if (
+          typeof result.user?.email !== "string" ||
+          !Number.isSafeInteger(result.revision) ||
+          result.revision < 0 ||
+          !validData(result.data)
+        )
           throw Error("Saved data could not be read. Reload to try again.");
         revision.current = result.revision;
         setEmail(result.user.email);
         setData(result.data);
+        setLoaded(true);
       } catch (cause) {
         if (controller.signal.aborted) return;
         setError(
@@ -53,7 +64,14 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     return () => controller.abort();
   }, []);
   async function save(next: BudgetData) {
-    if (!ready || error || busy.current) return false;
+    if (!loaded || error || busy.current) return false;
+    setSaveError("");
+    if (!validWorkspace(next)) {
+      setSaveError(
+        "Changes were not saved. Check record limits, dates, amounts, and linked payments, then try again.",
+      );
+      return false;
+    }
     busy.current = true;
     setSaving(true);
     try {
@@ -63,9 +81,18 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ data: next, revision: revision.current }),
       });
       const result = await response.json();
-      if (!response.ok)
+      if (!response.ok) {
+        const message =
+          result.error || "Changes could not be saved. Reload to try again.";
+        if ([400, 413, 415, 429].includes(response.status)) {
+          setSaveError(message);
+          return false;
+        }
+        throw Error(message);
+      }
+      if (result.revision !== revision.current + 1)
         throw Error(
-          result.error || "Changes could not be saved. Reload to try again.",
+          "The save could not be confirmed. Reload before editing again.",
         );
       revision.current = result.revision;
       setData(next);
@@ -91,10 +118,13 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
       if (!response.ok) throw Error("Sign out failed. Please try again.");
       setData(emptyData);
       setEmail(null);
-      router.push("/login");
+      setLoaded(false);
+      router.replace("/login");
       router.refresh();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to sign out.");
+      setSaveError(
+        cause instanceof Error ? cause.message : "Unable to sign out.",
+      );
     } finally {
       busy.current = false;
       setSaving(false);
@@ -102,7 +132,17 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
   }
   return (
     <BudgetContext.Provider
-      value={{ data, ready, email, error, saving, save, logout }}
+      value={{
+        data,
+        ready,
+        loaded,
+        email,
+        error,
+        saveError,
+        saving,
+        save,
+        logout,
+      }}
     >
       {children}
     </BudgetContext.Provider>

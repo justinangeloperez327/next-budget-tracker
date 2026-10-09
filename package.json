@@ -50,5 +50,13 @@
   "engines": {
     "node": ">=22.13.0"
   },
-  "type": "module"
+  "type": "module",
+  "overrides": {
+    "prisma": {
+      "mysql2": "^3.24.5"
+    },
+    "@prisma/config": {
+      "deepmerge-ts": "^8.0.0"
+    }
+  }
 }

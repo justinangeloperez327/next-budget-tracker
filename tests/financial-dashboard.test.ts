@@ -1,8 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  financialDashboardSnapshot,
-} from "../src/lib/financial-dashboard.ts";
+import { financialDashboardSnapshot } from "../src/lib/financial-dashboard.ts";
 import type { BudgetData } from "../src/lib/budget.ts";
 
 const data: BudgetData = {
@@ -187,4 +185,58 @@ test("unconfigured government provider stays distinct from missed contribution",
 
   assert.equal(pagIbig?.configured, false);
   assert.equal(pagIbig?.attentionCount, 0);
+});
+
+test("historical dashboard excludes later debt repayments and savings deposits", () => {
+  const laterData: BudgetData = {
+    ...data,
+    debtPayments: [
+      {
+        id: "45454545-aaaa-4454-8454-454545454545",
+        debtId: data.debts![0].id,
+        expenseId: "46464646-aaaa-4464-8464-464646464646",
+        amount: 10000,
+        paymentDate: "2026-11-01",
+      },
+    ],
+    savingsDeposits: (data.savingsDeposits ?? []).map((deposit) => ({
+      ...deposit,
+      depositDate: "2026-11-01",
+    })),
+  };
+  const october = financialDashboardSnapshot(
+    laterData,
+    "2026-10",
+    "2026-11-30",
+  );
+  const november = financialDashboardSnapshot(
+    laterData,
+    "2026-11",
+    "2026-11-30",
+  );
+  assert.equal(october.debts.totalPaid, 0);
+  assert.equal(october.savings.totalSaved, 0);
+  assert.ok(november.debts.totalPaid > 0);
+  assert.ok(november.savings.totalSaved > 0);
+});
+
+test("historical dashboard excludes debts and goals that had not started", () => {
+  const laterData: BudgetData = {
+    ...data,
+    debts: (data.debts ?? []).map((debt) => ({
+      ...debt,
+      startDate: "2026-11-01",
+    })),
+    savingsGoals: (data.savingsGoals ?? []).map((goal) => ({
+      ...goal,
+      startDate: "2026-11-01",
+    })),
+  };
+  const october = financialDashboardSnapshot(
+    laterData,
+    "2026-10",
+    "2026-11-30",
+  );
+  assert.equal(october.debts.originalDebt, 0);
+  assert.equal(october.savings.totalTargets, 0);
 });

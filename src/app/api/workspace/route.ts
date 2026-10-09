@@ -500,7 +500,7 @@ export async function PUT(request: Request) {
             notes: entry.notes ?? null,
           })),
         });
-    });
+    }, { maxWait: 10000, timeout: 30000 });
 
     return json({ revision: revision + 1 });
   } catch (error) {

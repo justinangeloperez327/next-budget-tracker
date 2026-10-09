@@ -80,20 +80,22 @@ function activeRoute(pathname: string, href: string) {
 
 export function Workspace({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { ready, email, error, saving, logout } = useBudget();
+  const { ready, loaded, email, error, saveError, saving, logout } =
+    useBudget();
   const section = sectionForPath(pathname);
   const saveLabel = error
-    ? "Save issue"
-    : saving
-      ? "Saving…"
-      : ready
-        ? "All changes saved"
-        : "Loading…";
-  const SaveStatusIcon = error
-    ? CircleAlert
-    : saving
-      ? LoaderCircle
-      : CheckCircle2;
+    ? loaded
+      ? "Save issue"
+      : "Workspace unavailable"
+    : saveError
+      ? "Action failed"
+      : saving
+        ? "Saving…"
+        : ready
+          ? "All changes saved"
+          : "Loading…";
+  const SaveStatusIcon =
+    error || saveError ? CircleAlert : saving ? LoaderCircle : CheckCircle2;
 
   return (
     <div className="min-h-screen md:grid md:grid-cols-[232px_minmax(0,1fr)]">
@@ -121,7 +123,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`flex shrink-0 items-center gap-2 rounded-md px-3 py-2.5 text-sm transition-colors md:shrink ${ 
+                className={`flex shrink-0 items-center gap-2 rounded-md px-3 py-2.5 text-sm transition-colors md:shrink ${
                   active
                     ? "bg-muted font-medium text-primary"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -140,12 +142,14 @@ export function Workspace({ children }: { children: React.ReactNode }) {
               {email?.[0]?.toUpperCase() || "A"}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium">Signed in</p>
+              <p className="text-sm font-medium">
+                {email ? "Signed in" : "Account"}
+              </p>
               <p
                 className="mt-0.5 truncate text-xs text-muted-foreground"
                 title={email ?? undefined}
               >
-                {email || "Loading account…"}
+                {email || (ready ? "Account unavailable" : "Loading account…")}
               </p>
             </div>
           </div>
@@ -170,8 +174,10 @@ export function Workspace({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex items-center gap-2">
             <span
-              className={`hidden items-center gap-2 text-xs sm:flex ${ 
-                error ? "text-destructive" : "text-muted-foreground"
+              className={`hidden items-center gap-2 text-xs sm:flex ${
+                error || saveError
+                  ? "text-destructive"
+                  : "text-muted-foreground"
               }`}
               role={saving ? "status" : undefined}
             >
@@ -201,25 +207,31 @@ export function Workspace({ children }: { children: React.ReactNode }) {
           id="workspace-main"
           className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10"
         >
-          {error ? (
+          {error || saveError ? (
             <div
               role="alert"
               className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm"
             >
-              <span>{error}</span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => window.location.reload()}
-              >
-                Reload workspace
-              </Button>
+              <span>{error || saveError}</span>
+              {error ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.location.reload()}
+                >
+                  Reload workspace
+                </Button>
+              ) : null}
             </div>
           ) : null}
 
-          {ready ? (
+          {loaded ? (
             children
+          ) : ready ? (
+            <p className="text-sm text-muted-foreground">
+              Your workspace is unavailable. Reload to try again.
+            </p>
           ) : (
             <div role="status" className="space-y-4">
               <p className="text-sm text-muted-foreground">

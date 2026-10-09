@@ -17,7 +17,8 @@ const MAX_SAVINGS_GOALS = 500;
 const MAX_SAVINGS_DEPOSITS = 10_000;
 const MAX_REMITTANCES = 10_000;
 const MONTH_PATTERN = /^(19|20|21)\d{2}-(0[1-9]|1[0-2])$/;
-const UUID_PATTERN = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
+const UUID_PATTERN =
+  /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 
 export function validWorkspace(value: unknown): value is BudgetData {
   if (!validData(value) || value.expenses.length > 2000) return false;
@@ -54,6 +55,12 @@ export function validWorkspace(value: unknown): value is BudgetData {
   )
     return false;
 
+  const expensesById = new Map(
+    value.expenses.map((entry) => [entry.id, entry]),
+  );
+  const billsById = new Map(recurringBills.map((entry) => [entry.id, entry]));
+  const debtsById = new Map(debts.map((entry) => [entry.id, entry]));
+  const goalsById = new Map(savingsGoals.map((entry) => [entry.id, entry]));
   const ids = new Set<string>();
   for (const e of value.expenses) {
     if (
@@ -187,10 +194,8 @@ export function validWorkspace(value: unknown): value is BudgetData {
   const billExpenseIds = new Set<string>();
   for (const payment of billPayments) {
     const periodKey = payment.billId + ":" + payment.period;
-    const bill = recurringBills.find((entry) => entry.id === payment.billId);
-    const expense = value.expenses.find(
-      (entry) => entry.id === payment.expenseId,
-    );
+    const bill = billsById.get(payment.billId);
+    const expense = expensesById.get(payment.expenseId);
     if (
       !UUID_PATTERN.test(payment.id) ||
       billPaymentIds.has(payment.id) ||
@@ -238,10 +243,8 @@ export function validWorkspace(value: unknown): value is BudgetData {
   const debtExpenseIds = new Set<string>();
   const paidByDebt = new Map<string, number>();
   for (const payment of debtPayments) {
-    const debt = debts.find((entry) => entry.id === payment.debtId);
-    const expense = value.expenses.find(
-      (entry) => entry.id === payment.expenseId,
-    );
+    const debt = debtsById.get(payment.debtId);
+    const expense = expensesById.get(payment.expenseId);
     if (
       !UUID_PATTERN.test(payment.id) ||
       debtPaymentIds.has(payment.id) ||
@@ -289,7 +292,7 @@ export function validWorkspace(value: unknown): value is BudgetData {
   const savingsDepositIds = new Set<string>();
   const savedByGoal = new Map<string, number>();
   for (const deposit of savingsDeposits) {
-    const goal = savingsGoals.find((entry) => entry.id === deposit.goalId);
+    const goal = goalsById.get(deposit.goalId);
     if (
       !UUID_PATTERN.test(deposit.id) ||
       savingsDepositIds.has(deposit.id) ||
@@ -313,7 +316,7 @@ export function validWorkspace(value: unknown): value is BudgetData {
   for (const remittance of remittances) {
     const expenseAmount = remittanceExpenseAmount(remittance);
     const expense = remittance.expenseId
-      ? value.expenses.find((entry) => entry.id === remittance.expenseId)
+      ? expensesById.get(remittance.expenseId)
       : undefined;
     if (
       !UUID_PATTERN.test(remittance.id) ||
