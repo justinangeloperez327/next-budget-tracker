@@ -8,15 +8,20 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  name         String
-  passwordHash String
-  revision     Int       @default(0)
-  createdAt    DateTime  @default(now())
-  sessions     Session[]
-  expenses     Expense[]
-  budgets      Budget[]
+  id                 String              @id @default(uuid())
+  email              String              @unique
+  name               String
+  passwordHash       String
+  revision           Int                 @default(0)
+  createdAt          DateTime            @default(now())
+  sessions           Session[]
+  expenses           Expense[]
+  budgets            Budget[]
+  governmentAccounts GovernmentAccount[]
+  mp2Accounts        Mp2Account[]
+  recurringBills     RecurringBill[]
+  debts              Debt[]
+  savingsGoals       SavingsGoal[]
 }
 
 model Session {
@@ -43,12 +48,176 @@ model Expense {
 }
 
 model Budget {
-  userId String
-  month  String
-  amount BigInt
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  month       String
+  amount      BigInt
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  allocations BudgetAllocation[]
 
   @@id([userId, month])
+}
+
+model BudgetAllocation {
+  userId   String
+  month    String
+  category String
+  amount   BigInt
+  budget   Budget @relation(fields: [userId, month], references: [userId, month], onDelete: Cascade)
+
+  @@id([userId, month, category])
+}
+
+model GovernmentAccount {
+  id                String                   @id
+  userId            String
+  provider          String
+  memberType        String
+  accountIdentifier String?
+  monthlyTarget     BigInt?
+  frequency         String
+  active            Boolean                  @default(true)
+  user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contributions     GovernmentContribution[]
+
+  @@unique([userId, provider])
+  @@index([userId])
+}
+
+model GovernmentContribution {
+  id              String            @id
+  accountId       String
+  period          String
+  amount          BigInt
+  paymentDate     String?
+  status          String
+  referenceNumber String?
+  notes           String?
+  account         GovernmentAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, period])
+}
+
+model Mp2Account {
+  id                 String       @id
+  userId             String
+  name               String
+  accountNumber      String?
+  dividendOption     String
+  initialPaymentDate String?
+  monthlyTarget      BigInt?
+  active             Boolean      @default(true)
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deposits           Mp2Deposit[]
+
+  @@unique([userId, accountNumber])
+  @@index([userId])
+}
+
+model Mp2Deposit {
+  id              String     @id
+  accountId       String
+  paymentDate     String
+  amount          BigInt
+  referenceNumber String?
+  notes           String?
+  account         Mp2Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, paymentDate])
+}
+
+model RecurringBill {
+  id         String        @id
+  userId     String
+  name       String
+  category   String
+  amount     BigInt
+  frequency  String
+  dueDay     Int
+  startMonth String
+  endMonth   String?
+  active     Boolean       @default(true)
+  notes      String?
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments   BillPayment[]
+
+  @@index([userId])
+}
+
+model BillPayment {
+  id              String        @id
+  billId          String
+  period          String
+  amount          BigInt
+  paymentDate     String
+  expenseId       String
+  referenceNumber String?
+  notes           String?
+  bill            RecurringBill @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@unique([billId, period])
+  @@index([billId, paymentDate])
+  @@index([expenseId])
+}
+
+model Debt {
+  id             String        @id
+  userId         String
+  name           String
+  lender         String
+  originalAmount BigInt
+  category       String
+  startDate      String
+  dueDate        String?
+  monthlyTarget  BigInt?
+  active         Boolean       @default(true)
+  notes          String?
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments       DebtPayment[]
+
+  @@index([userId])
+}
+
+model DebtPayment {
+  id              String @id
+  debtId          String
+  amount          BigInt
+  paymentDate     String
+  expenseId       String
+  referenceNumber String?
+  notes           String?
+  debt            Debt   @relation(fields: [debtId], references: [id], onDelete: Cascade)
+
+  @@index([debtId, paymentDate])
+  @@index([expenseId])
+}
+
+model SavingsGoal {
+  id            String           @id
+  userId        String
+  name          String
+  targetAmount  BigInt
+  startDate     String
+  targetDate    String?
+  monthlyTarget BigInt?
+  destination   String?
+  active        Boolean          @default(true)
+  notes         String?
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deposits      SavingsDeposit[]
+
+  @@index([userId])
+}
+
+model SavingsDeposit {
+  id              String      @id
+  goalId          String
+  amount          BigInt
+  depositDate     String
+  referenceNumber String?
+  notes           String?
+  goal            SavingsGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, depositDate])
 }
 
 model AuthAttempt {

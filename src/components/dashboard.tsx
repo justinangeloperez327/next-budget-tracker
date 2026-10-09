@@ -1,11 +1,21 @@
 "use client";
 import Link from "next/link";
 import { NotebookNote } from "@/components/sakura-companion";
-import { Wallet, Receipt, Target } from "lucide-react";
+import {
+  CalendarDays,
+  HandCoins,
+  PiggyBank,
+  Wallet,
+  Receipt,
+  Target,
+} from "lucide-react";
 import { SpotlightCard } from "@/components/kokonutui/spotlight-cards";
 import { useState } from "react";
 import { useBudget } from "@/components/budget-provider";
 import { categories, money, total } from "@/lib/budget";
+import { billOccurrencesForPeriod } from "@/lib/bills";
+import { debtDashboardSnapshot } from "@/lib/debt";
+import { savingsDashboardSnapshot } from "@/lib/savings";
 import { ExpenseEditor } from "@/components/expense-editor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +27,29 @@ export function Dashboard() {
     new Date().toLocaleDateString("en-CA").slice(0, 7),
   );
   const expenses = data.expenses.filter((e) => e.date.startsWith(month));
+  const today = new Date().toLocaleDateString("en-CA");
+  const billOccurrences = billOccurrencesForPeriod(
+    data.recurringBills ?? [],
+    data.billPayments ?? [],
+    month,
+    today,
+  );
+  const billsOutstanding = billOccurrences
+    .filter((entry) => !entry.payment)
+    .reduce((sum, entry) => sum + entry.bill.amount, 0);
+  const overdueBills = billOccurrences.filter(
+    (entry) => entry.status === "Overdue",
+  ).length;
+  const debtSummary = debtDashboardSnapshot(
+    data.debts ?? [],
+    data.debtPayments ?? [],
+    today,
+  );
+  const savingsSummary = savingsDashboardSnapshot(
+    data.savingsGoals ?? [],
+    data.savingsDeposits ?? [],
+    today,
+  );
   const spent = total(expenses),
     budget = data.budgets[month] || 0;
   const [status, setStatus] = useState("");
@@ -45,7 +78,7 @@ export function Dashboard() {
           }}
         />
       </div>
-      <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr_1fr]">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {[
           {
             label: budget && spent > budget ? "Over budget" : "Remaining",
@@ -75,10 +108,43 @@ export function Dashboard() {
             color: "var(--muted-foreground)",
             description: `${expenses.length} expenses recorded`,
           },
+          {
+            label: "Bills outstanding",
+            value: money(billsOutstanding),
+            icon: CalendarDays,
+            color: overdueBills ? "var(--destructive)" : "var(--primary)",
+            description: overdueBills
+              ? `${overdueBills} overdue bill${overdueBills === 1 ? "" : "s"}`
+              : `${billOccurrences.filter((entry) => !entry.payment).length} still due`,
+          },
+          {
+            label: "Debt remaining",
+            value: money(debtSummary.remaining),
+            icon: HandCoins,
+            color: debtSummary.overdueCount
+              ? "var(--destructive)"
+              : "var(--primary)",
+            description: debtSummary.overdueCount
+              ? `${debtSummary.overdueCount} overdue debt${debtSummary.overdueCount === 1 ? "" : "s"}`
+              : `${debtSummary.activeCount} active debt${debtSummary.activeCount === 1 ? "" : "s"}`,
+          },
+          {
+            label: "Savings goals",
+            value: money(savingsSummary.totalSaved),
+            icon: PiggyBank,
+            color: savingsSummary.pastDueCount
+              ? "var(--destructive)"
+              : "var(--primary)",
+            description: savingsSummary.pastDueCount
+              ? `${savingsSummary.pastDueCount} goal${savingsSummary.pastDueCount === 1 ? "" : "s"} past target date`
+              : `${savingsSummary.activeCount} active · ${savingsSummary.completedCount} completed`,
+          },
         ].map(({ label, value, icon, color, description }, index) => (
           <SpotlightCard
             key={label}
-            className={index === 0 ? "notebook-note" : undefined}
+            className={
+              index === 0 ? "notebook-note md:col-span-2 xl:col-span-1" : undefined
+            }
             item={{ title: label, description, icon, color }}
           >
             <p

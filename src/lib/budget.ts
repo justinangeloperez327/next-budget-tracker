@@ -1,3 +1,29 @@
+import {
+  validGovernmentData,
+  type GovernmentAccount,
+  type GovernmentContribution,
+} from "./government.ts";
+import {
+  validMp2Data,
+  type Mp2Account,
+  type Mp2Deposit,
+} from "./mp2.ts";
+import {
+  validBillsData,
+  type RecurringBill,
+  type BillPayment,
+} from "./bills.ts";
+import {
+  validDebtData,
+  type Debt,
+  type DebtPayment,
+} from "./debt.ts";
+import {
+  validSavingsData,
+  type SavingsGoal,
+  type SavingsDeposit,
+} from "./savings.ts";
+
 export const categories = [
   "Housing",
   "Food",
@@ -15,11 +41,105 @@ export type Expense = {
   category: Category;
   date: string;
 };
+export type CategoryBudget = Partial<Record<Category, number>>;
 export type BudgetData = {
   expenses: Expense[];
   budgets: Record<string, number>;
+  categoryBudgets?: Record<string, CategoryBudget>;
+  governmentAccounts?: GovernmentAccount[];
+  governmentContributions?: GovernmentContribution[];
+  mp2Accounts?: Mp2Account[];
+  mp2Deposits?: Mp2Deposit[];
+  recurringBills?: RecurringBill[];
+  billPayments?: BillPayment[];
+  debts?: Debt[];
+  debtPayments?: DebtPayment[];
+  savingsGoals?: SavingsGoal[];
+  savingsDeposits?: SavingsDeposit[];
 };
-export const emptyData: BudgetData = { expenses: [], budgets: {} };
+export type BudgetVarianceStatus = "saved" | "on-budget" | "overspent";
+export type CategoryBudgetSummary = {
+  category: Category;
+  budget: number;
+  actual: number;
+  variance: number;
+  status: BudgetVarianceStatus;
+};
+export type MonthlyBudgetReport = {
+  month: string;
+  budget: number;
+  actual: number;
+  variance: number;
+  saved: number;
+  overspent: number;
+  savingsRate: number;
+  budgetUsedRate: number;
+  allocated: number;
+  unallocated: number;
+  categorySaved: number;
+  categoryOverspent: number;
+  categorySummaries: CategoryBudgetSummary[];
+};
+
+export type HistoricalCategoryPerformance = {
+  category: Category;
+  budget: number;
+  actual: number;
+  variance: number;
+  activeMonths: number;
+  savedMonths: number;
+  overspentMonths: number;
+};
+
+export type HistoricalBudgetAnalysis = {
+  months: string[];
+  reports: MonthlyBudgetReport[];
+  totalBudget: number;
+  totalActual: number;
+  netVariance: number;
+  totalSaved: number;
+  totalOverspent: number;
+  averageSavingsRate: number;
+  savedMonths: number;
+  overspentMonths: number;
+  onBudgetMonths: number;
+  categoryPerformance: HistoricalCategoryPerformance[];
+};
+
+export const emptyData: BudgetData = {
+  expenses: [],
+  budgets: {},
+  categoryBudgets: {},
+  governmentAccounts: [],
+  governmentContributions: [],
+  mp2Accounts: [],
+  mp2Deposits: [],
+  recurringBills: [],
+  billPayments: [],
+  debts: [],
+  debtPayments: [],
+  savingsGoals: [],
+  savingsDeposits: [],
+};
+
+function validCategoryBudgets(value: unknown) {
+  if (value === undefined) return true;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  return Object.entries(value).every(
+    ([month, allocations]) =>
+      /^\d{4}-\d{2}$/.test(month) &&
+      !!allocations &&
+      typeof allocations === "object" &&
+      !Array.isArray(allocations) &&
+      Object.entries(allocations).every(
+        ([category, amount]) =>
+          categories.includes(category as Category) &&
+          Number.isSafeInteger(amount) &&
+          Number(amount) >= 0,
+      ),
+  );
+}
+
 export function validData(data: unknown): data is BudgetData {
   if (!data || typeof data !== "object") return false;
   const d = data as BudgetData;
@@ -40,18 +160,184 @@ export function validData(data: unknown): data is BudgetData {
     !Array.isArray(d.budgets) &&
     Object.entries(d.budgets).every(
       ([k, v]) => /^\d{4}-\d{2}$/.test(k) && Number.isSafeInteger(v) && v >= 0,
-    )
+    ) &&
+    validCategoryBudgets(d.categoryBudgets) &&
+    validGovernmentData(
+      d.governmentAccounts,
+      d.governmentContributions,
+    ) &&
+    validMp2Data(d.mp2Accounts, d.mp2Deposits) &&
+    validBillsData(d.recurringBills, d.billPayments) &&
+    validDebtData(d.debts, d.debtPayments) &&
+    validSavingsData(d.savingsGoals, d.savingsDeposits) &&
+    (d.recurringBills ?? []).every((bill) => categories.includes(bill.category)) &&
+    (d.debts ?? []).every((debt) => categories.includes(debt.category))
   );
 }
+
 export function total(expenses: Expense[]) {
   return expenses.reduce((sum, e) => sum + e.amount, 0);
 }
+
+export function categoryBudgetSummaries(
+  data: BudgetData,
+  month: string,
+): CategoryBudgetSummary[] {
+  const allocations = data.categoryBudgets?.[month] ?? {};
+  const actuals = new Map<Category, number>(
+    categories.map((category) => [category, 0]),
+  );
+
+  for (const expense of data.expenses) {
+    if (!expense.date.startsWith(month)) continue;
+    actuals.set(
+      expense.category,
+      (actuals.get(expense.category) ?? 0) + expense.amount,
+    );
+  }
+
+  return categories.map((category) => {
+    const budget = allocations[category] ?? 0;
+    const actual = actuals.get(category) ?? 0;
+    const variance = budget - actual;
+    return {
+      category,
+      budget,
+      actual,
+      variance,
+      status:
+        variance > 0 ? "saved" : variance < 0 ? "overspent" : "on-budget",
+    };
+  });
+}
+
+export function monthlyBudgetReport(
+  data: BudgetData,
+  month: string,
+): MonthlyBudgetReport {
+  const budget = data.budgets[month] ?? 0;
+  const actual = total(
+    data.expenses.filter((expense) => expense.date.startsWith(month)),
+  );
+  const variance = budget - actual;
+  const saved = Math.max(variance, 0);
+  const overspent = Math.max(-variance, 0);
+  const categorySummaries = categoryBudgetSummaries(data, month);
+  const allocated = categorySummaries.reduce(
+    (sum, entry) => sum + entry.budget,
+    0,
+  );
+  const categorySaved = categorySummaries.reduce(
+    (sum, entry) => sum + Math.max(entry.variance, 0),
+    0,
+  );
+  const categoryOverspent = categorySummaries.reduce(
+    (sum, entry) => sum + Math.max(-entry.variance, 0),
+    0,
+  );
+
+  return {
+    month,
+    budget,
+    actual,
+    variance,
+    saved,
+    overspent,
+    savingsRate: budget > 0 ? (saved / budget) * 100 : 0,
+    budgetUsedRate: budget > 0 ? (actual / budget) * 100 : 0,
+    allocated,
+    unallocated: budget - allocated,
+    categorySaved,
+    categoryOverspent,
+    categorySummaries,
+  };
+}
+
+export function budgetHistoryMonths(data: BudgetData) {
+  return [
+    ...new Set([
+      ...Object.keys(data.budgets),
+      ...Object.keys(data.categoryBudgets ?? {}),
+      ...data.expenses.map((expense) => expense.date.slice(0, 7)),
+    ]),
+  ].toSorted();
+}
+
+export function historicalBudgetAnalysis(
+  data: BudgetData,
+  months: string[] = budgetHistoryMonths(data),
+): HistoricalBudgetAnalysis {
+  const uniqueMonths = [...new Set(months)].toSorted();
+  const reports = uniqueMonths.map((month) => monthlyBudgetReport(data, month));
+  const totalBudget = reports.reduce((sum, report) => sum + report.budget, 0);
+  const totalActual = reports.reduce((sum, report) => sum + report.actual, 0);
+  const totalSaved = reports.reduce((sum, report) => sum + report.saved, 0);
+  const totalOverspent = reports.reduce(
+    (sum, report) => sum + report.overspent,
+    0,
+  );
+  const budgetedReports = reports.filter((report) => report.budget > 0);
+
+  const categoryPerformance = categories.map((category) => {
+    const entries = reports
+      .map((report) =>
+        report.categorySummaries.find((entry) => entry.category === category),
+      )
+      .filter(
+        (entry): entry is CategoryBudgetSummary =>
+          !!entry && (entry.budget > 0 || entry.actual > 0),
+      );
+
+    const budget = entries.reduce((sum, entry) => sum + entry.budget, 0);
+    const actual = entries.reduce((sum, entry) => sum + entry.actual, 0);
+
+    return {
+      category,
+      budget,
+      actual,
+      variance: budget - actual,
+      activeMonths: entries.length,
+      savedMonths: entries.filter((entry) => entry.status === "saved").length,
+      overspentMonths: entries.filter((entry) => entry.status === "overspent")
+        .length,
+    };
+  });
+
+  return {
+    months: uniqueMonths,
+    reports,
+    totalBudget,
+    totalActual,
+    netVariance: totalBudget - totalActual,
+    totalSaved,
+    totalOverspent,
+    averageSavingsRate:
+      budgetedReports.length > 0
+        ? budgetedReports.reduce(
+            (sum, report) => sum + report.savingsRate,
+            0,
+          ) / budgetedReports.length
+        : 0,
+    savedMonths: reports.filter(
+      (report) => report.budget > 0 && report.variance > 0,
+    ).length,
+    overspentMonths: reports.filter(
+      (report) => report.budget > 0 && report.variance < 0,
+    ).length,
+    onBudgetMonths: reports.filter(
+      (report) => report.budget > 0 && report.variance === 0,
+    ).length,
+    categoryPerformance,
+  };
+}
+
 export function money(cents: number) {
   return new Intl.NumberFormat("en-AE", {
     style: "currency",
     currency: "AED",
   }).format(cents / 100);
 }
+
 export function csv(expenses: Expense[]) {
   const escape = (s: string) => '"' + s.replaceAll('"', '""') + '"';
   const safe = (s: string) => escape(/^[=+@\-\t\r]/.test(s) ? "'" + s : s);

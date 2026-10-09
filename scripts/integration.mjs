@@ -73,9 +73,34 @@ try {
   assert.match(setCookie, /HttpOnly/i);
   assert.match(setCookie, /SameSite=Lax/i);
   const cookie = setCookie.split(";")[0];
+  assert.equal((await request("/budget", { cookie })).status, 200);
+  assert.equal((await request("/reports", { cookie })).status, 200);
+  assert.equal((await request("/reports/history", { cookie })).status, 200);
+  assert.equal((await request("/sss", { cookie })).status, 200);
+  assert.equal((await request("/sss/history", { cookie })).status, 200);
+  assert.equal((await request("/contributions", { cookie })).status, 200);
+  assert.equal((await request("/philhealth", { cookie })).status, 200);
+  assert.equal((await request("/philhealth/history", { cookie })).status, 200);
+  assert.equal((await request("/pagibig", { cookie })).status, 200);
+  assert.equal((await request("/pagibig/history", { cookie })).status, 200);
+  assert.equal((await request("/mp2", { cookie })).status, 200);
+  assert.equal((await request("/mp2/history", { cookie })).status, 200);
+  assert.equal((await request("/bills", { cookie })).status, 200);
+  assert.equal((await request("/debts", { cookie })).status, 200);
+  assert.equal((await request("/savings", { cookie })).status, 200);
+  assert.equal((await request("/savings/history", { cookie })).status, 200);
   const initial = await (await request("/api/workspace", { cookie })).json();
   assert.equal(initial.user.email, email);
   assert.equal(initial.revision, 0);
+  const sssAccountId = randomUUID();
+  const philHealthAccountId = randomUUID();
+  const pagIbigAccountId = randomUUID();
+  const mp2AccountId = randomUUID();
+  const rentBillId = randomUUID();
+  const rentExpenseId = randomUUID();
+  const debtId = randomUUID();
+  const debtExpenseId = randomUUID();
+  const savingsGoalId = randomUUID();
   const data = {
     expenses: [
       {
@@ -85,8 +110,173 @@ try {
         date: "2026-10-07",
         amount: 9_000_000_000,
       },
+      {
+        id: rentExpenseId,
+        description: "Rent",
+        category: "Housing",
+        date: "2026-10-01",
+        amount: 185000,
+      },
+      {
+        id: debtExpenseId,
+        description: "Debt payment · Personal loan",
+        category: "Other",
+        date: "2026-10-08",
+        amount: 50000,
+      },
     ],
     budgets: { "2026-10": 9_500_000_000 },
+    categoryBudgets: { "2026-10": { Food: 8_500_000_000 } },
+    governmentAccounts: [
+      {
+        id: sssAccountId,
+        provider: "SSS",
+        memberType: "OFW",
+        accountIdentifier: "12-3456789-0",
+        monthlyTarget: 500000,
+        frequency: "Monthly",
+        active: true,
+      },
+      {
+        id: philHealthAccountId,
+        provider: "PHILHEALTH",
+        memberType: "Direct Contributor",
+        accountIdentifier: "PH-TEST-001",
+        monthlyTarget: 250000,
+        frequency: "Monthly",
+        active: true,
+      },
+      {
+        id: pagIbigAccountId,
+        provider: "PAGIBIG",
+        memberType: "Mandatory - OFW",
+        accountIdentifier: "MID-TEST-001",
+        monthlyTarget: 20000,
+        frequency: "Monthly",
+        active: true,
+      },
+    ],
+    governmentContributions: [
+      {
+        id: randomUUID(),
+        accountId: sssAccountId,
+        period: "2026-10",
+        amount: 500000,
+        paymentDate: "2026-10-07",
+        status: "Paid",
+        referenceNumber: "SSS-TEST-001",
+        notes: "Integration test contribution",
+      },
+      {
+        id: randomUUID(),
+        accountId: philHealthAccountId,
+        period: "2026-10",
+        amount: 250000,
+        paymentDate: "2026-10-06",
+        status: "Paid",
+        referenceNumber: "PH-TEST-001",
+      },
+      {
+        id: randomUUID(),
+        accountId: pagIbigAccountId,
+        period: "2026-10",
+        amount: 20000,
+        status: "Pending",
+        notes: "Awaiting payment confirmation",
+      },
+    ],
+    mp2Accounts: [
+      {
+        id: mp2AccountId,
+        name: "MP2 Retirement",
+        accountNumber: "MP2-TEST-001",
+        dividendOption: "Compounded",
+        initialPaymentDate: "2026-10-01",
+        monthlyTarget: 100000,
+        active: true,
+      },
+    ],
+    mp2Deposits: [
+      {
+        id: randomUUID(),
+        accountId: mp2AccountId,
+        paymentDate: "2026-10-07",
+        amount: 100000,
+        referenceNumber: "MP2-PAY-001",
+        notes: "Integration test MP2 savings",
+      },
+    ],
+    recurringBills: [
+      {
+        id: rentBillId,
+        name: "Rent",
+        category: "Housing",
+        amount: 190000,
+        frequency: "Monthly",
+        dueDay: 1,
+        startMonth: "2026-01",
+        active: true,
+        notes: "Integration recurring bill",
+      },
+    ],
+    billPayments: [
+      {
+        id: randomUUID(),
+        billId: rentBillId,
+        period: "2026-10",
+        amount: 185000,
+        paymentDate: "2026-10-01",
+        expenseId: rentExpenseId,
+        referenceNumber: "RENT-OCT-2026",
+      },
+    ],
+    debts: [
+      {
+        id: debtId,
+        name: "Personal loan",
+        lender: "Family",
+        originalAmount: 500000,
+        category: "Other",
+        startDate: "2026-01-10",
+        dueDate: "2026-12-31",
+        monthlyTarget: 50000,
+        active: true,
+        notes: "Integration test debt",
+      },
+    ],
+    debtPayments: [
+      {
+        id: randomUUID(),
+        debtId,
+        amount: 50000,
+        paymentDate: "2026-10-08",
+        expenseId: debtExpenseId,
+        referenceNumber: "DEBT-PAY-001",
+      },
+    ],
+    savingsGoals: [
+      {
+        id: savingsGoalId,
+        name: "Emergency fund",
+        targetAmount: 1000000,
+        startDate: "2026-01-01",
+        targetDate: "2026-12-31",
+        monthlyTarget: 100000,
+        destination: "UAE Savings Bank",
+        active: true,
+        notes: "Integration test savings goal",
+      },
+    ],
+    savingsDeposits: [
+      {
+        id: randomUUID(),
+        goalId: savingsGoalId,
+        amount: 150000,
+        depositDate: "2026-10-08",
+        referenceNumber: "SAVE-001",
+        notes: "Integration test savings",
+      },
+    ],
   };
   assert.equal(
     (
@@ -129,7 +319,21 @@ try {
   assert.deepEqual(
     (await (await request("/api/workspace", { cookie: secondCookie })).json())
       .data,
-    { expenses: [], budgets: {} },
+    {
+      expenses: [],
+      budgets: {},
+      categoryBudgets: {},
+      governmentAccounts: [],
+      governmentContributions: [],
+      mp2Accounts: [],
+      mp2Deposits: [],
+      recurringBills: [],
+      billPayments: [],
+      debts: [],
+      debtPayments: [],
+      savingsGoals: [],
+      savingsDeposits: [],
+    },
   );
   assert.equal(
     (
@@ -170,7 +374,21 @@ try {
   assert.deepEqual(
     (await (await request("/api/workspace", { cookie: newCookie })).json())
       .data,
-    { expenses: [], budgets: {} },
+    {
+      expenses: [],
+      budgets: {},
+      categoryBudgets: {},
+      governmentAccounts: [],
+      governmentContributions: [],
+      mp2Accounts: [],
+      mp2Deposits: [],
+      recurringBills: [],
+      billPayments: [],
+      debts: [],
+      debtPayments: [],
+      savingsGoals: [],
+      savingsDeposits: [],
+    },
   );
   console.log(
     "PASS: registration, session cookies, login/logout, persistence, isolation, deletion, CSRF and stale-write protection.",

@@ -28,6 +28,10 @@ export function Expenses() {
     [category, setCategory] = useState("All"),
     [month, setMonth] = useState(""),
     [deleting, setDeleting] = useState<Expense | null>(null);
+  const managedExpenseIds = new Set([
+    ...(data.billPayments ?? []).map((payment) => payment.expenseId),
+    ...(data.debtPayments ?? []).map((payment) => payment.expenseId),
+  ]);
   const filtered = data.expenses
     .filter(
       (e) =>
@@ -150,19 +154,25 @@ export function Expenses() {
                     {money(e.amount)}
                   </TableCell>
                   <TableCell>
-                    <div className="flex justify-end gap-1">
-                      <ExpenseEditor expense={e} />
-                      <Button
-                        variant="ghost"
-                        className="text-destructive"
-                        size="sm"
-                        disabled={!!error || saving}
-                        onClick={() => setDeleting(e)}
-                        aria-label={`Delete ${e.description}`}
-                      >
-                        Delete
-                      </Button>
-                    </div>
+                    {managedExpenseIds.has(e.id) ? (
+                      <div className="text-right text-xs text-muted-foreground">
+                        Managed by linked record
+                      </div>
+                    ) : (
+                      <div className="flex justify-end gap-1">
+                        <ExpenseEditor expense={e} />
+                        <Button
+                          variant="ghost"
+                          className="text-destructive"
+                          size="sm"
+                          disabled={!!error || saving}
+                          onClick={() => setDeleting(e)}
+                          aria-label={`Delete ${e.description}`}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

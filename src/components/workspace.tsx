@@ -1,15 +1,75 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Receipt, LogOut, HardDrive } from "lucide-react";
+import {
+  LayoutDashboard,
+  Receipt,
+  LogOut,
+  HardDrive,
+  Target,
+  ChartNoAxesColumnIncreasing,
+  Landmark,
+  CalendarDays,
+  HandCoins,
+  PiggyBank,
+} from "lucide-react";
 import { ThemeControls } from "@/components/theme-controls";
 import { SakuraCat } from "@/components/sakura-companion";
 import { Brand } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { useBudget } from "@/components/budget-provider";
+
 export function Workspace({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { ready, email, error, saving, logout } = useBudget();
+  const section =
+    pathname === "/expenses"
+      ? "Expenses"
+      : pathname.startsWith("/bills")
+        ? "Bills"
+        : pathname.startsWith("/debts")
+          ? "Debt"
+          : pathname.startsWith("/savings")
+            ? "Savings"
+            : pathname === "/budget"
+        ? "Budget"
+        : pathname.startsWith("/reports")
+          ? "Reports"
+          : pathname.startsWith("/contributions") ||
+              pathname.startsWith("/sss") ||
+              pathname.startsWith("/philhealth") ||
+              pathname.startsWith("/pagibig") ||
+              pathname.startsWith("/mp2")
+            ? "Contributions"
+            : "Overview";
+
+  const navigation = [
+    ["/dashboard", "Dashboard", LayoutDashboard],
+    ["/budget", "Budget vs. actual", Target],
+    ["/expenses", "Expense tracker", Receipt],
+    ["/bills", "Bills & recurring", CalendarDays],
+    ["/debts", "Debt / Utang", HandCoins],
+    ["/savings", "Savings goals", PiggyBank],
+    ["/contributions", "Contributions", Landmark],
+    ["/reports", "Reports", ChartNoAxesColumnIncreasing],
+  ] as const;
+
+  function isActive(href: string) {
+    if (href === "/reports") return pathname.startsWith("/reports");
+    if (href === "/bills") return pathname.startsWith("/bills");
+    if (href === "/debts") return pathname.startsWith("/debts");
+    if (href === "/savings") return pathname.startsWith("/savings");
+    if (href === "/contributions")
+      return (
+        pathname.startsWith("/contributions") ||
+        pathname.startsWith("/sss") ||
+        pathname.startsWith("/philhealth") ||
+        pathname.startsWith("/pagibig") ||
+        pathname.startsWith("/mp2")
+      );
+    return pathname === href;
+  }
+
   return (
     <div className="min-h-screen md:grid md:grid-cols-[240px_minmax(0,1fr)]">
       <aside className="flex flex-col border-b bg-card p-5 md:sticky md:top-0 md:h-screen md:border-r md:border-b-0">
@@ -27,17 +87,16 @@ export function Workspace({ children }: { children: React.ReactNode }) {
           aria-label="Workspace navigation"
           className="mt-4 flex flex-wrap gap-2 md:flex-col"
         >
-          {(
-            [
-              ["/dashboard", "Dashboard", LayoutDashboard],
-              ["/expenses", "Expense tracker", Receipt],
-            ] as const
-          ).map(([href, label, Icon]) => (
+          {navigation.map(([href, label, Icon]) => (
             <Link
               key={href}
               href={href}
-              aria-current={pathname === href ? "page" : undefined}
-              className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${pathname === href ? "bg-muted font-medium text-primary" : "text-muted-foreground hover:bg-muted"}`}
+              aria-current={isActive(href) ? "page" : undefined}
+              className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
+                isActive(href)
+                  ? "bg-muted font-medium text-primary"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
             >
               <Icon size={18} />
               {label}
@@ -85,9 +144,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
       </aside>
       <div className="min-w-0">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-card px-6 py-4 text-xs text-muted-foreground">
-          <span>
-            Workspace / {pathname === "/expenses" ? "Expenses" : "Overview"}
-          </span>
+          <span>Workspace / {section}</span>
           <div className="flex items-center gap-3">
             <ThemeControls />
             <span className="hidden items-center gap-2 sm:flex">
