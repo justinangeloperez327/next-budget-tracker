@@ -89,6 +89,8 @@ try {
   assert.equal((await request("/debts", { cookie })).status, 200);
   assert.equal((await request("/savings", { cookie })).status, 200);
   assert.equal((await request("/savings/history", { cookie })).status, 200);
+  assert.equal((await request("/remittances", { cookie })).status, 200);
+  assert.equal((await request("/remittances/history", { cookie })).status, 200);
   const initial = await (await request("/api/workspace", { cookie })).json();
   assert.equal(initial.user.email, email);
   assert.equal(initial.revision, 0);
@@ -101,6 +103,7 @@ try {
   const debtId = randomUUID();
   const debtExpenseId = randomUUID();
   const savingsGoalId = randomUUID();
+  const remittanceExpenseId = randomUUID();
   const data = {
     expenses: [
       {
@@ -123,6 +126,13 @@ try {
         category: "Other",
         date: "2026-10-08",
         amount: 50000,
+      },
+      {
+        id: remittanceExpenseId,
+        description: "Remittance · Family",
+        category: "Other",
+        date: "2026-10-09",
+        amount: 101500,
       },
     ],
     budgets: { "2026-10": 9_500_000_000 },
@@ -277,6 +287,24 @@ try {
         notes: "Integration test savings",
       },
     ],
+    remittances: [
+      {
+        id: randomUUID(),
+        recipient: "Family",
+        destinationType: "Family / person",
+        provider: "Exchange House",
+        sentAmount: 100000,
+        feeAmount: 1500,
+        receivedAmount: 1550000,
+        transferDate: "2026-10-09",
+        status: "Completed",
+        principalAsExpense: true,
+        category: "Other",
+        expenseId: remittanceExpenseId,
+        referenceNumber: "REM-TEST-001",
+        notes: "Integration test remittance",
+      },
+    ],
   };
   assert.equal(
     (
@@ -333,6 +361,7 @@ try {
       debtPayments: [],
       savingsGoals: [],
       savingsDeposits: [],
+      remittances: [],
     },
   );
   assert.equal(
@@ -388,6 +417,7 @@ try {
       debtPayments: [],
       savingsGoals: [],
       savingsDeposits: [],
+      remittances: [],
     },
   );
   console.log(

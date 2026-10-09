@@ -27,6 +27,7 @@ export async function GET() {
             recurringBills: { include: { payments: true } },
             debts: { include: { payments: true } },
             savingsGoals: { include: { deposits: true } },
+            remittances: true,
           },
         }),
       { isolationLevel: "RepeatableRead" },
@@ -193,6 +194,26 @@ export async function GET() {
             ...(deposit.notes ? { notes: deposit.notes } : {}),
           })),
         ),
+        remittances: snapshot.remittances.map((entry) => ({
+          id: entry.id,
+          recipient: entry.recipient,
+          destinationType: entry.destinationType,
+          ...(entry.provider ? { provider: entry.provider } : {}),
+          sentAmount: Number(entry.sentAmount),
+          feeAmount: Number(entry.feeAmount),
+          ...(entry.receivedAmount === null
+            ? {}
+            : { receivedAmount: Number(entry.receivedAmount) }),
+          transferDate: entry.transferDate,
+          status: entry.status,
+          principalAsExpense: entry.principalAsExpense,
+          category: entry.category,
+          ...(entry.expenseId ? { expenseId: entry.expenseId } : {}),
+          ...(entry.referenceNumber
+            ? { referenceNumber: entry.referenceNumber }
+            : {}),
+          ...(entry.notes ? { notes: entry.notes } : {}),
+        })),
       },
     });
   } catch (error) {
@@ -232,6 +253,7 @@ export async function PUT(request: Request) {
     const debtPayments = data.debtPayments ?? [];
     const savingsGoals = data.savingsGoals ?? [];
     const savingsDeposits = data.savingsDeposits ?? [];
+    const remittances = data.remittances ?? [];
     const revision = Number(input.revision);
     await db().$transaction(async (tx) => {
       const updated = await tx.user.updateMany({
@@ -244,6 +266,7 @@ export async function PUT(request: Request) {
           "Your notebook changed in another tab or device. Reload before editing again.",
         );
 
+      await tx.remittance.deleteMany({ where: { userId: user.id } });
       await tx.savingsGoal.deleteMany({ where: { userId: user.id } });
       await tx.debt.deleteMany({ where: { userId: user.id } });
       await tx.recurringBill.deleteMany({ where: { userId: user.id } });
@@ -449,6 +472,30 @@ export async function PUT(request: Request) {
             depositDate: deposit.depositDate,
             referenceNumber: deposit.referenceNumber ?? null,
             notes: deposit.notes ?? null,
+          })),
+        });
+
+      if (remittances.length)
+        await tx.remittance.createMany({
+          data: remittances.map((entry) => ({
+            id: entry.id,
+            userId: user.id,
+            recipient: entry.recipient,
+            destinationType: entry.destinationType,
+            provider: entry.provider ?? null,
+            sentAmount: BigInt(entry.sentAmount),
+            feeAmount: BigInt(entry.feeAmount),
+            receivedAmount:
+              entry.receivedAmount === undefined
+                ? null
+                : BigInt(entry.receivedAmount),
+            transferDate: entry.transferDate,
+            status: entry.status,
+            principalAsExpense: entry.principalAsExpense,
+            category: entry.category,
+            expenseId: entry.expenseId ?? null,
+            referenceNumber: entry.referenceNumber ?? null,
+            notes: entry.notes ?? null,
           })),
         });
     });

@@ -1,5 +1,6 @@
 import { validData, type BudgetData } from "./budget.ts";
 import { billOccursInPeriod } from "./bills.ts";
+import { remittanceExpenseAmount } from "./remittance.ts";
 
 const MAX_AMOUNT = 9_999_999_900;
 const MAX_BUDGET_MONTHS = 600;
@@ -14,6 +15,7 @@ const MAX_DEBTS = 500;
 const MAX_DEBT_PAYMENTS = 5_000;
 const MAX_SAVINGS_GOALS = 500;
 const MAX_SAVINGS_DEPOSITS = 10_000;
+const MAX_REMITTANCES = 10_000;
 const MONTH_PATTERN = /^(19|20|21)\d{2}-(0[1-9]|1[0-2])$/;
 const UUID_PATTERN = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 
@@ -31,6 +33,7 @@ export function validWorkspace(value: unknown): value is BudgetData {
   const debtPayments = value.debtPayments ?? [];
   const savingsGoals = value.savingsGoals ?? [];
   const savingsDeposits = value.savingsDeposits ?? [];
+  const remittances = value.remittances ?? [];
   const budgetMonths = new Set([
     ...Object.keys(value.budgets),
     ...Object.keys(categoryBudgets),
@@ -46,7 +49,8 @@ export function validWorkspace(value: unknown): value is BudgetData {
     debts.length > MAX_DEBTS ||
     debtPayments.length > MAX_DEBT_PAYMENTS ||
     savingsGoals.length > MAX_SAVINGS_GOALS ||
-    savingsDeposits.length > MAX_SAVINGS_DEPOSITS
+    savingsDeposits.length > MAX_SAVINGS_DEPOSITS ||
+    remittances.length > MAX_REMITTANCES
   )
     return false;
 
@@ -298,6 +302,47 @@ export function validWorkspace(value: unknown): value is BudgetData {
     if (nextSaved > goal.targetAmount) return false;
     savedByGoal.set(deposit.goalId, nextSaved);
     savingsDepositIds.add(deposit.id);
+  }
+
+  const remittanceIds = new Set<string>();
+  const remittanceExpenseIds = new Set<string>();
+  for (const remittance of remittances) {
+    const expenseAmount = remittanceExpenseAmount(remittance);
+    const expense = remittance.expenseId
+      ? value.expenses.find((entry) => entry.id === remittance.expenseId)
+      : undefined;
+    if (
+      !UUID_PATTERN.test(remittance.id) ||
+      remittanceIds.has(remittance.id) ||
+      remittance.sentAmount > MAX_AMOUNT ||
+      remittance.feeAmount > MAX_AMOUNT ||
+      remittance.sentAmount + remittance.feeAmount > MAX_AMOUNT ||
+      (remittance.receivedAmount !== undefined &&
+        remittance.receivedAmount > MAX_AMOUNT) ||
+      !remittance.recipient.trim() ||
+      remittance.recipient.length > 120 ||
+      (remittance.provider !== undefined &&
+        (remittance.provider.length > 120 || !remittance.provider.trim())) ||
+      (remittance.referenceNumber !== undefined &&
+        (remittance.referenceNumber.length > 80 ||
+          !remittance.referenceNumber.trim())) ||
+      (remittance.notes !== undefined &&
+        (remittance.notes.length > 500 || !remittance.notes.trim())) ||
+      (expenseAmount > 0 &&
+        (!remittance.expenseId ||
+          !UUID_PATTERN.test(remittance.expenseId) ||
+          !expense ||
+          remittanceExpenseIds.has(remittance.expenseId) ||
+          billExpenseIds.has(remittance.expenseId) ||
+          debtExpenseIds.has(remittance.expenseId) ||
+          expense.amount !== expenseAmount ||
+          expense.date !== remittance.transferDate ||
+          expense.category !== remittance.category)) ||
+      (expenseAmount === 0 && remittance.expenseId !== undefined)
+    )
+      return false;
+    remittanceIds.add(remittance.id);
+    if (remittance.expenseId) remittanceExpenseIds.add(remittance.expenseId);
   }
 
   return true;

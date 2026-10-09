@@ -22,6 +22,7 @@ model User {
   recurringBills     RecurringBill[]
   debts              Debt[]
   savingsGoals       SavingsGoal[]
+  remittances         Remittance[]
 }
 
 model Session {
@@ -218,6 +219,28 @@ model SavingsDeposit {
   goal            SavingsGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
 
   @@index([goalId, depositDate])
+}
+
+model Remittance {
+  id                 String  @id
+  userId             String
+  recipient          String
+  destinationType    String
+  provider           String?
+  sentAmount         BigInt
+  feeAmount          BigInt  @default(0)
+  receivedAmount     BigInt?
+  transferDate       String
+  status             String
+  principalAsExpense Boolean @default(true)
+  category           String
+  expenseId          String?
+  referenceNumber    String?
+  notes              String?
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, transferDate])
+  @@index([expenseId])
 }
 
 model AuthAttempt {

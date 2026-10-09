@@ -5,6 +5,7 @@ import {
   CalendarDays,
   HandCoins,
   PiggyBank,
+  Send,
   Wallet,
   Receipt,
   Target,
@@ -16,6 +17,7 @@ import { categories, money, total } from "@/lib/budget";
 import { billOccurrencesForPeriod } from "@/lib/bills";
 import { debtDashboardSnapshot } from "@/lib/debt";
 import { savingsDashboardSnapshot } from "@/lib/savings";
+import { remittanceMonthSummary } from "@/lib/remittance";
 import { ExpenseEditor } from "@/components/expense-editor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -50,6 +52,10 @@ export function Dashboard() {
     data.savingsDeposits ?? [],
     today,
   );
+  const remittanceSummary = remittanceMonthSummary(
+    data.remittances ?? [],
+    month,
+  );
   const spent = total(expenses),
     budget = data.budgets[month] || 0;
   const [status, setStatus] = useState("");
@@ -78,7 +84,7 @@ export function Dashboard() {
           }}
         />
       </div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
           {
             label: budget && spent > budget ? "Over budget" : "Remaining",
@@ -138,6 +144,17 @@ export function Dashboard() {
             description: savingsSummary.pastDueCount
               ? `${savingsSummary.pastDueCount} goal${savingsSummary.pastDueCount === 1 ? "" : "s"} past target date`
               : `${savingsSummary.activeCount} active · ${savingsSummary.completedCount} completed`,
+          },
+          {
+            label: "Remitted this month",
+            value: money(remittanceSummary.sentAmount),
+            icon: Send,
+            color: remittanceSummary.pendingCount
+              ? "var(--muted-foreground)"
+              : "var(--primary)",
+            description: remittanceSummary.pendingCount
+              ? `${remittanceSummary.pendingCount} transfer${remittanceSummary.pendingCount === 1 ? "" : "s"} pending · ${money(remittanceSummary.feeAmount)} fees`
+              : `${remittanceSummary.count} transfer${remittanceSummary.count === 1 ? "" : "s"} · ${money(remittanceSummary.feeAmount)} fees`,
           },
         ].map(({ label, value, icon, color, description }, index) => (
           <SpotlightCard

@@ -12,6 +12,7 @@ import {
   CalendarDays,
   HandCoins,
   PiggyBank,
+  Send,
 } from "lucide-react";
 import { ThemeControls } from "@/components/theme-controls";
 import { SakuraCat } from "@/components/sakura-companion";
@@ -31,7 +32,9 @@ export function Workspace({ children }: { children: React.ReactNode }) {
           ? "Debt"
           : pathname.startsWith("/savings")
             ? "Savings"
-            : pathname === "/budget"
+            : pathname.startsWith("/remittances")
+              ? "Remittances"
+              : pathname === "/budget"
         ? "Budget"
         : pathname.startsWith("/reports")
           ? "Reports"
@@ -50,6 +53,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
     ["/bills", "Bills & recurring", CalendarDays],
     ["/debts", "Debt / Utang", HandCoins],
     ["/savings", "Savings goals", PiggyBank],
+    ["/remittances", "Remittances", Send],
     ["/contributions", "Contributions", Landmark],
     ["/reports", "Reports", ChartNoAxesColumnIncreasing],
   ] as const;
@@ -59,6 +63,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
     if (href === "/bills") return pathname.startsWith("/bills");
     if (href === "/debts") return pathname.startsWith("/debts");
     if (href === "/savings") return pathname.startsWith("/savings");
+    if (href === "/remittances") return pathname.startsWith("/remittances");
     if (href === "/contributions")
       return (
         pathname.startsWith("/contributions") ||

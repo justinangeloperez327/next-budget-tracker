@@ -31,6 +31,9 @@ export function Expenses() {
   const managedExpenseIds = new Set([
     ...(data.billPayments ?? []).map((payment) => payment.expenseId),
     ...(data.debtPayments ?? []).map((payment) => payment.expenseId),
+    ...(data.remittances ?? []).flatMap((entry) =>
+      entry.expenseId ? [entry.expenseId] : [],
+    ),
   ]);
   const filtered = data.expenses
     .filter(
