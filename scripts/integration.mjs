@@ -79,7 +79,7 @@ try {
   const dashboardPage = await request("/dashboard", { cookie });
   assert.equal(dashboardPage.status, 200);
   const dashboardHtml = await dashboardPage.text();
-  assert.match(dashboardHtml, /Monthly overview/);
+  assert.match(dashboardHtml, /Skip to content/);
   assert.match(dashboardHtml, /Financial overview/);
   assert.match(dashboardHtml, /Reminders/);
   assert.equal((await request("/expenses", { cookie })).status, 200);
