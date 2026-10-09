@@ -1,17 +1,10 @@
 import {
-  budgetHistoryMonths,
   historicalBudgetAnalysis,
   monthlyBudgetReport,
   type BudgetData,
 } from "./budget.ts";
 import { financialDashboardSnapshot } from "./financial-dashboard.ts";
 import { governmentProviders } from "./government.ts";
-
-function monthEnd(month: string) {
-  const [year, monthNumber] = month.split("-").map(Number);
-  const day = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
-  return `${month}-${String(day).padStart(2, "0")}`;
-}
 
 function monthsForYear(year: number, today: string) {
   const currentYear = Number(today.slice(0, 4));
@@ -260,11 +253,3 @@ export function monthlyFinancialReportCsv(
     .join("\r\n");
 }
 
-export function reportHistoryMonths(data: BudgetData) {
-  return budgetHistoryMonths(data);
-}
-
-export function reportAsOfDate(month: string, today: string) {
-  if (month === today.slice(0, 7)) return today;
-  return monthEnd(month);
-}

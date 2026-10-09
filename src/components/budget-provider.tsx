@@ -1,7 +1,8 @@
 "use client";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { emptyData, validData, type BudgetData } from "@/lib/budget";
+import { emptyData, type BudgetData } from "@/lib/budget";
+import { validWorkspace } from "@/lib/workspace-validation";
 type Context = {
   data: BudgetData;
   ready: boolean;
@@ -33,7 +34,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         if (!response.ok)
           throw Error(result.error || "Your notebook could not be loaded.");
         if (controller.signal.aborted) return;
-        if (!result.user?.email || !validData(result.data))
+        if (!result.user?.email || !validWorkspace(result.data))
           throw Error("Saved data could not be read. Reload to try again.");
         revision.current = result.revision;
         setEmail(result.user.email);

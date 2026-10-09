@@ -187,19 +187,23 @@ export function validWorkspace(value: unknown): value is BudgetData {
   const billExpenseIds = new Set<string>();
   for (const payment of billPayments) {
     const periodKey = payment.billId + ":" + payment.period;
+    const bill = recurringBills.find((entry) => entry.id === payment.billId);
+    const expense = value.expenses.find(
+      (entry) => entry.id === payment.expenseId,
+    );
     if (
       !UUID_PATTERN.test(payment.id) ||
       billPaymentIds.has(payment.id) ||
       paidPeriods.has(periodKey) ||
-      !billIds.has(payment.billId) ||
+      !bill ||
       !UUID_PATTERN.test(payment.expenseId) ||
-      !ids.has(payment.expenseId) ||
+      !expense ||
       billExpenseIds.has(payment.expenseId) ||
-      !billOccursInPeriod(
-        recurringBills.find((bill) => bill.id === payment.billId)!,
-        payment.period,
-      ) ||
+      !billOccursInPeriod(bill, payment.period) ||
       payment.amount > MAX_AMOUNT ||
+      expense.amount !== payment.amount ||
+      expense.date !== payment.paymentDate ||
+      expense.category !== bill.category ||
       (payment.referenceNumber !== undefined &&
         (payment.referenceNumber.length > 80 ||
           !payment.referenceNumber.trim())) ||

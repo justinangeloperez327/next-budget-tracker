@@ -124,7 +124,11 @@ export function DebtTracker() {
       ...data,
       expenses: data.expenses.map((expense) =>
         linkedExpenseIds.has(expense.id)
-          ? { ...expense, category: debt.category }
+          ? {
+              ...expense,
+              description: `Debt payment · ${debt.name}`,
+              category: debt.category,
+            }
           : expense,
       ),
       debts: [...debts.filter((entry) => entry.id !== debt.id), debt],

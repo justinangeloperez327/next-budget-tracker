@@ -142,6 +142,27 @@ test("workspace enforces bill payment ownership, recurrence, and unique periods"
   assert.equal(
     validWorkspace({
       ...base,
+      expenses: [{ ...base.expenses[0], amount: rentPayment.amount - 1 }],
+    }),
+    false,
+  );
+  assert.equal(
+    validWorkspace({
+      ...base,
+      expenses: [{ ...base.expenses[0], date: "2026-10-02" }],
+    }),
+    false,
+  );
+  assert.equal(
+    validWorkspace({
+      ...base,
+      expenses: [{ ...base.expenses[0], category: "Food" as const }],
+    }),
+    false,
+  );
+  assert.equal(
+    validWorkspace({
+      ...base,
       billPayments: [
         {
           ...rentPayment,

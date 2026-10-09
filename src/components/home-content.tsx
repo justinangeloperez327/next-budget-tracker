@@ -3,10 +3,12 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  BellRing,
   ChartNoAxesCombined,
+  Landmark,
   ListFilter,
+  Send,
   Target,
-  Wallet,
 } from "lucide-react";
 import { SakuraStamp, SakuraCat } from "@/components/sakura-companion";
 import ShapeHero from "@/components/kokonutui/shape-hero";
@@ -28,8 +30,9 @@ export function HomeContent() {
               <span className="text-primary">what matters.</span>
             </h1>
             <p className="mt-6 max-w-md leading-7 text-muted-foreground">
-              Know where your money goes. Track the everyday, build a monthly
-              plan, and make your next decision with confidence.
+              Plan in AED, keep Philippine commitments in view, and understand
+              where your money is going without mixing currencies or duplicating
+              transactions.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg">
@@ -43,92 +46,99 @@ export function HomeContent() {
               <p className="text-xs leading-5 text-muted-foreground">
                 Small steps, a calmer month.
                 <br />
-                Your account keeps your budget in sync.
+                Your account keeps your financial workspace in sync.
               </p>
             </div>
           </div>
+
           <div className="min-w-0 rounded-xl border bg-card p-6 shadow-[0_12px_48px_-24px_rgba(24,24,27,0.16)] sm:p-8">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium">
-                Your month, at a glance
-              </span>
-              <Wallet className="size-5 text-primary" />
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Illustrative budget · AED
-            </p>
-            <p className="mt-8 text-sm text-muted-foreground">
-              Available to spend
-            </p>
-            <p className="mt-2 text-4xl font-medium tabular-nums tracking-tight">
-              2,850<span className="text-2xl text-muted-foreground">.00</span>
-            </p>
-            <div className="mt-6 flex justify-between text-xs text-muted-foreground">
-              <span>43% of budget used</span>
-              <span>AED 5,000 budget</span>
-            </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-              <div className="h-full w-[43%] rounded-full bg-primary" />
-            </div>
-            <div className="mt-6 divide-y border-t text-sm">
+            <p className="eyebrow">One financial workspace</p>
+            <h2 className="mt-3 text-xl font-medium tracking-tight">
+              Built for everyday life between the UAE and Philippines.
+            </h2>
+            <div className="mt-6 divide-y border-y">
               {[
-                ["Groceries", "AED 850", "bg-muted"],
-                ["Transport", "AED 300", "bg-primary/20"],
-                ["Other expenses", "AED 1,000", "bg-primary/35"],
-              ].map(([label, value, color]) => (
-                <div
-                  key={label}
-                  className="flex items-center justify-between gap-4 py-3"
-                >
-                  <span className="flex items-center gap-3">
-                    <span
-                      aria-hidden="true"
-                      className={`size-3 rounded-sm ${color}`}
-                    />
-                    {label}
-                  </span>
-                  <span className="tabular-nums">{value}</span>
+                {
+                  icon: Target,
+                  title: "Plan and spend",
+                  description:
+                    "Budget vs. actual, expenses, recurring bills, and debt in AED.",
+                },
+                {
+                  icon: Send,
+                  title: "Send and save",
+                  description:
+                    "Track remittances, transfer fees, savings goals, and own-account transfers.",
+                },
+                {
+                  icon: Landmark,
+                  title: "Philippine commitments",
+                  description:
+                    "Keep SSS, PhilHealth, Pag-IBIG, and MP2 records in PHP.",
+                },
+                {
+                  icon: BellRing,
+                  title: "Stay ahead",
+                  description:
+                    "Use reminders, financial reports, and history to spot what needs attention.",
+                },
+              ].map(({ icon: Icon, title, description }) => (
+                <div className="flex gap-3 py-4" key={title}>
+                  <Icon className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium">{title}</p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                      {description}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
+            <p className="mt-4 text-xs leading-5 text-muted-foreground">
+              New accounts start empty. Your workspace only shows the financial
+              records you enter.
+            </p>
           </div>
         </div>
       </ShapeHero>
+
       <SpotlightCards
         className="!bg-transparent !px-0"
-        eyebrow="A simpler spending habit"
+        eyebrow="A simpler financial habit"
         heading="Everything you need to stay on track."
         items={[
           {
             icon: ListFilter,
             title: "Capture the everyday",
             description:
-              "Add expenses, organise categories, and find transactions quickly.",
+              "Record expenses and linked payments without double counting.",
             color: "var(--primary)",
           },
           {
             icon: Target,
-            title: "Give spending a limit",
+            title: "Keep plans measurable",
             description:
-              "Set a monthly budget and keep your remaining balance in view.",
+              "Compare monthly budgets, category limits, savings goals, bills, and debt.",
             color: "var(--primary)",
           },
           {
             icon: ChartNoAxesCombined,
             title: "See the bigger picture",
             description:
-              "Review spending by category and export a CSV backup whenever you need.",
+              "Review AED and PHP activity separately through reports and financial history.",
             color: "var(--primary)",
           },
         ]}
       />
+
       <div className="mt-8 flex flex-wrap items-center justify-between gap-5 border-t py-8">
         <div>
           <h2 className="text-xl font-medium tracking-tight">
             Your next month starts with one small step.
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Set a budget. Add an expense. See the difference.
+            Set a budget, record what matters, and let the reports build from
+            your real data.
           </p>
         </div>
         <Button asChild variant="outline">

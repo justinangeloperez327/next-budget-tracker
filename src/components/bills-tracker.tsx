@@ -110,8 +110,18 @@ export function BillsTracker() {
         : {}),
     };
 
+    const linkedExpenseIds = new Set(
+      payments
+        .filter((payment) => payment.billId === bill.id)
+        .map((payment) => payment.expenseId),
+    );
     const saved = await save({
       ...data,
+      expenses: data.expenses.map((expense) =>
+        linkedExpenseIds.has(expense.id)
+          ? { ...expense, description: bill.name, category: bill.category }
+          : expense,
+      ),
       recurringBills: [
         ...bills.filter((entry) => entry.id !== bill.id),
         bill,

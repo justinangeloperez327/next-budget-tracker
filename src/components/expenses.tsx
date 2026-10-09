@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useBudget } from "@/components/budget-provider";
 import { categories, money, total, csv, type Expense } from "@/lib/budget";
 import { ExpenseEditor } from "@/components/expense-editor";
+import { managedExpenseSources } from "@/lib/workspace-links";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,13 +29,7 @@ export function Expenses() {
     [category, setCategory] = useState("All"),
     [month, setMonth] = useState(""),
     [deleting, setDeleting] = useState<Expense | null>(null);
-  const managedExpenseIds = new Set([
-    ...(data.billPayments ?? []).map((payment) => payment.expenseId),
-    ...(data.debtPayments ?? []).map((payment) => payment.expenseId),
-    ...(data.remittances ?? []).flatMap((entry) =>
-      entry.expenseId ? [entry.expenseId] : [],
-    ),
-  ]);
+  const managedSources = managedExpenseSources(data);
   const filtered = data.expenses
     .filter(
       (e) =>
@@ -157,9 +152,9 @@ export function Expenses() {
                     {money(e.amount)}
                   </TableCell>
                   <TableCell>
-                    {managedExpenseIds.has(e.id) ? (
+                    {managedSources.has(e.id) ? (
                       <div className="text-right text-xs text-muted-foreground">
-                        Managed by linked record
+                        Managed by {managedSources.get(e.id)}
                       </div>
                     ) : (
                       <div className="flex justify-end gap-1">

@@ -48,6 +48,9 @@ try {
   }
   assert.ok(started, "server starts");
   assert.equal((await request("/api/workspace")).status, 401);
+  const homepage = await request("/");
+  assert.equal(homepage.status, 200);
+  assert.doesNotMatch(await homepage.text(), /Illustrative budget|AED 5,000 budget/);
   const email = `test-${randomUUID()}@example.com`;
   const credentials = {
     email,
@@ -73,6 +76,8 @@ try {
   assert.match(setCookie, /HttpOnly/i);
   assert.match(setCookie, /SameSite=Lax/i);
   const cookie = setCookie.split(";")[0];
+  assert.equal((await request("/dashboard", { cookie })).status, 200);
+  assert.equal((await request("/expenses", { cookie })).status, 200);
   assert.equal((await request("/budget", { cookie })).status, 200);
   assert.equal((await request("/reports", { cookie })).status, 200);
   assert.equal((await request("/reports/history", { cookie })).status, 200);

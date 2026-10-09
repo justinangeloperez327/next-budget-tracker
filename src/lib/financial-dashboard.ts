@@ -33,11 +33,7 @@ export function financialDashboardSnapshot(
   today: string,
 ) {
   const asOfDate =
-    month === today.slice(0, 7)
-      ? today
-      : month < today.slice(0, 7)
-        ? monthEndDate(month)
-        : monthEndDate(month);
+    month === today.slice(0, 7) ? today : monthEndDate(month);
 
   const budget = monthlyBudgetReport(data, month);
   const bills = billDashboardSnapshot(
