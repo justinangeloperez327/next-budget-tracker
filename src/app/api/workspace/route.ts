@@ -8,6 +8,7 @@ import {
   json,
 } from "@/lib/server/http";
 import { validWorkspace } from "@/lib/workspace-validation";
+import { normalizeManagedExpenseLinks } from "@/lib/workspace-normalization";
 
 export const runtime = "nodejs";
 
@@ -35,7 +36,7 @@ export async function GET() {
     return json({
       user: { email: user.email, name: user.name },
       revision: snapshot.revision,
-      data: {
+      data: normalizeManagedExpenseLinks({
         expenses: snapshot.expenses.map((e) => ({
           id: e.id,
           description: e.description,
@@ -214,7 +215,7 @@ export async function GET() {
             : {}),
           ...(entry.notes ? { notes: entry.notes } : {}),
         })),
-      },
+      }),
     });
   } catch (error) {
     return failure(error);
