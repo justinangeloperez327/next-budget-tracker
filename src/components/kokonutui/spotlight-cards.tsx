@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 
 // ─── Constants ──────────────────────────────────────────────────────────────────
 
-const TILT_MAX = 2;
+const TILT_MAX = 1;
 const TILT_SPRING = { stiffness: 300, damping: 28 } as const;
 const GLOW_SPRING = { stiffness: 180, damping: 22 } as const;
 
@@ -91,7 +91,7 @@ export function SpotlightCard({
         opacity: 1,
       }}
       className={cn(
-        "group relative flex flex-col gap-5 overflow-hidden rounded-xl border p-6",
+        "group relative flex flex-col gap-4 overflow-hidden rounded-lg border p-5",
         // Light
         "border-border bg-card shadow-[0_2px_8px_rgba(0,0,0,0.025)]",
         // Dark
@@ -114,7 +114,7 @@ export function SpotlightCard({
       {/* Static accent tint — always visible */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 rounded-2xl"
+        className="pointer-events-none absolute inset-0 rounded-lg"
         style={{
           background: `radial-gradient(ellipse at 20% 20%, color-mix(in srgb, ${item.color} 7%, transparent), transparent 65%)`,
         }}
@@ -123,17 +123,11 @@ export function SpotlightCard({
       {/* Hover glow layer */}
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 rounded-2xl"
+        className="pointer-events-none absolute inset-0 rounded-lg"
         style={{
           opacity: reducedMotion ? 0 : glowOpacity,
           background: `radial-gradient(ellipse at 20% 20%, color-mix(in srgb, ${item.color} 12%, transparent), transparent 65%)`,
         }}
-      />
-
-      {/* Shimmer sweep */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 left-0 w-[55%] -translate-x-full -skew-x-12 bg-linear-to-r from-transparent via-white/4.5 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[280%]"
       />
 
       {/* Icon badge */}
@@ -149,7 +143,7 @@ export function SpotlightCard({
 
       {/* Text */}
       <div className="relative z-10 flex flex-col gap-2">
-        <h3 className="font-medium text-sm text-foreground tracking-tight">
+        <h3 className="text-sm font-medium tracking-tight text-foreground">
           {item.title}
         </h3>
         <p className="text-sm text-muted-foreground leading-relaxed">
@@ -191,7 +185,7 @@ export default function SpotlightCards({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden rounded-2xl px-8 pt-9 pb-10",
+        "relative w-full overflow-hidden rounded-lg px-8 pt-9 pb-10",
         "bg-card",
         className,
       )}
@@ -209,10 +203,10 @@ export default function SpotlightCards({
 
       {/* Header */}
       <div className="relative mb-8 flex flex-col gap-1.5">
-        <p className="font-semibold text-[10px] text-primary uppercase tracking-[0.22em]">
+        <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-primary">
           {eyebrow}
         </p>
-        <h2 className="font-semibold text-[22px] text-foreground tracking-tight">
+        <h2 className="text-[22px] font-medium tracking-tight text-foreground">
           {heading}
         </h2>
       </div>

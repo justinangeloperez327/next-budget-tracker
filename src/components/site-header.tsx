@@ -46,11 +46,11 @@ export function SiteHeader({ account }: { account: PublicAccount | null }) {
 
   return (
     <header className="border-b bg-card">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:flex-nowrap sm:px-6">
         <Brand />
         <nav
           aria-label="Main navigation"
-          className="flex flex-wrap items-center gap-1 text-sm"
+          className="no-scrollbar -mx-1 flex w-[calc(100%+0.5rem)] items-center gap-1 overflow-x-auto px-1 text-sm sm:mx-0 sm:w-auto sm:overflow-visible sm:px-0"
         >
           {[
             ["/about", "About"],
@@ -60,7 +60,7 @@ export function SiteHeader({ account }: { account: PublicAccount | null }) {
               key={href}
               href={href}
               aria-current={pathname === href ? "page" : undefined}
-              className={`rounded-md px-3 py-3 transition-colors hover:bg-muted ${pathname === href ? "text-primary" : "text-muted-foreground"}`}
+              className={`shrink-0 rounded-md px-3 py-2.5 transition-colors hover:bg-muted ${pathname === href ? "text-primary" : "text-muted-foreground"}`}
             >
               {label}
             </Link>
@@ -95,7 +95,7 @@ export function SiteHeader({ account }: { account: PublicAccount | null }) {
               <Link
                 href="/login"
                 aria-current={pathname === "/login" ? "page" : undefined}
-                className={`rounded-md px-3 py-3 transition-colors hover:bg-muted ${pathname === "/login" ? "text-primary" : "text-muted-foreground"}`}
+                className={`shrink-0 rounded-md px-3 py-2.5 transition-colors hover:bg-muted ${pathname === "/login" ? "text-primary" : "text-muted-foreground"}`}
               >
                 Log in
               </Link>
@@ -117,7 +117,7 @@ export function SiteHeader({ account }: { account: PublicAccount | null }) {
 export function SiteFooter({ authenticated }: { authenticated: boolean }) {
   return (
     <footer className="mt-12 border-t">
-      <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-4 px-6 py-6 text-sm text-muted-foreground">
+      <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-4 px-4 py-6 text-sm text-muted-foreground sm:px-6">
         <span>Budget Tracker · Make room for what matters.</span>
         <Link
           className="hover:text-primary"

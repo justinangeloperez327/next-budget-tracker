@@ -76,7 +76,12 @@ try {
   assert.match(setCookie, /HttpOnly/i);
   assert.match(setCookie, /SameSite=Lax/i);
   const cookie = setCookie.split(";")[0];
-  assert.equal((await request("/dashboard", { cookie })).status, 200);
+  const dashboardPage = await request("/dashboard", { cookie });
+  assert.equal(dashboardPage.status, 200);
+  const dashboardHtml = await dashboardPage.text();
+  assert.match(dashboardHtml, /Monthly overview/);
+  assert.match(dashboardHtml, /Financial overview/);
+  assert.match(dashboardHtml, /Reminders/);
   assert.equal((await request("/expenses", { cookie })).status, 200);
   assert.equal((await request("/budget", { cookie })).status, 200);
   assert.equal((await request("/reports", { cookie })).status, 200);

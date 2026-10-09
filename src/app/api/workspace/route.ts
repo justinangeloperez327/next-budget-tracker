@@ -263,7 +263,7 @@ export async function PUT(request: Request) {
       if (!updated.count)
         throw new HttpError(
           409,
-          "Your notebook changed in another tab or device. Reload before editing again.",
+          "Your workspace changed in another tab or device. Reload before editing again.",
         );
 
       await tx.remittance.deleteMany({ where: { userId: user.id } });

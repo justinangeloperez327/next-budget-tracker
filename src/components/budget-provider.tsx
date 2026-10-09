@@ -32,7 +32,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         });
         const result = await response.json();
         if (!response.ok)
-          throw Error(result.error || "Your notebook could not be loaded.");
+          throw Error(result.error || "Your workspace could not be loaded.");
         if (controller.signal.aborted) return;
         if (!result.user?.email || !validWorkspace(result.data))
           throw Error("Saved data could not be read. Reload to try again.");
@@ -44,7 +44,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         setError(
           cause instanceof Error
             ? cause.message
-            : "Unable to load your notebook. Reload to try again.",
+            : "Unable to load your workspace. Reload to try again.",
         );
       } finally {
         if (!controller.signal.aborted) setReady(true);

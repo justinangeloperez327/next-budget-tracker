@@ -62,7 +62,9 @@
   }
   body {
     @apply bg-background text-foreground;
+    min-width: 320px;
     font-family: "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+    text-rendering: optimizeLegibility;
   }
   button,
   a,
@@ -116,5 +118,14 @@
   h1,
   h2 {
     font-family: ui-rounded, "Segoe UI", system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }

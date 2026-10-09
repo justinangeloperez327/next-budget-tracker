@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { NotebookNote } from "@/components/sakura-companion";
 import {
   CalendarDays,
   HandCoins,
@@ -68,7 +67,7 @@ export function Dashboard() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-medium tracking-tight">
-            Your monthly notebook
+            Monthly overview
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             A clear view of your monthly spending.
@@ -307,15 +306,14 @@ export function Dashboard() {
           View all
         </Link>
       </div>
-      <div className="mt-4 divide-y rounded-xl border bg-card">
+      <div className="mt-4 divide-y rounded-lg border bg-card">
         {expenses.length === 0 ? (
-          <NotebookNote
-            title="A fresh page for your expenses"
-            className="border-0"
-          >
-            Add your first expense using the button above. Your recent entries
-            will appear here.
-          </NotebookNote>
+          <div className="px-5 py-10 text-center">
+            <p className="text-sm font-medium">No expenses this month</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Add an expense to start building this month&apos;s overview.
+            </p>
+          </div>
         ) : (
           expenses
             .toSorted((a, b) => b.date.localeCompare(a.date))
