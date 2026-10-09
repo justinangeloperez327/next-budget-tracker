@@ -9,6 +9,7 @@ import {
 } from "@/lib/server/http";
 import { validWorkspace } from "@/lib/workspace-validation";
 import { normalizeManagedExpenseLinks } from "@/lib/workspace-normalization";
+import type { BudgetData } from "@/lib/budget";
 
 export const runtime = "nodejs";
 
@@ -215,7 +216,7 @@ export async function GET() {
             : {}),
           ...(entry.notes ? { notes: entry.notes } : {}),
         })),
-      }),
+      } as BudgetData),
     });
   } catch (error) {
     return failure(error);

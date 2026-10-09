@@ -45,7 +45,7 @@ export function normalizeManagedExpenseLinks(data: BudgetData): BudgetData {
     if (amount <= 0) continue;
     updateExpense(remittance.expenseId, {
       amount,
-      category: remittance.category,
+      category: remittance.category as Expense["category"],
       date: remittance.transferDate,
     });
   }
