@@ -92,8 +92,9 @@ For Vercel:
 1. Connect a PostgreSQL provider such as Prisma Postgres or Neon.
 2. Set server-only `DATABASE_URL`.
 3. Set `DIRECT_URL` when your provider supplies a direct migration connection.
-4. Use `npm run build:vercel` when migrations should run as part of deployment.
-5. Use a separate preview database for preview deployments.
+4. Deploy manually from Vercel or the Vercel CLI when you are ready to release.
+5. `vercel.json` disables Git-triggered deployments and runs `npm run build:vercel` for manual deployments, which applies pending Prisma migrations before the Next.js build.
+6. Use a separate preview database if you intentionally create preview deployments.
 
 Do not expose database credentials through `NEXT_PUBLIC_*` variables.
 

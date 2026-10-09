@@ -52,10 +52,21 @@ export function failure(error: unknown) {
       { error: error.message },
       { status: error.status, headers: { "Cache-Control": "no-store" } },
     );
-  console.error(
-    "Budget API request failed",
-    error instanceof Error ? error.name : "UnknownError",
-  );
+  const details =
+    error && typeof error === "object"
+      ? {
+          name: error instanceof Error ? error.name : "UnknownError",
+          code:
+            "code" in error && typeof error.code === "string"
+              ? error.code
+              : undefined,
+          message:
+            error instanceof Error
+              ? error.message.split("\n", 1)[0]
+              : undefined,
+        }
+      : { name: "UnknownError" };
+  console.error("Budget API request failed", details);
   return Response.json(
     { error: "We couldn’t access your account data. Please try again shortly." },
     { status: 503, headers: { "Cache-Control": "no-store" } },
