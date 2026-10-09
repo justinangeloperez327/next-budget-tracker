@@ -13,6 +13,7 @@ import {
   HandCoins,
   PiggyBank,
   Send,
+  BadgeDollarSign,
 } from "lucide-react";
 import { ThemeControls } from "@/components/theme-controls";
 import { SakuraCat } from "@/components/sakura-companion";
@@ -34,7 +35,9 @@ export function Workspace({ children }: { children: React.ReactNode }) {
             ? "Savings"
             : pathname.startsWith("/remittances")
               ? "Remittances"
-              : pathname === "/budget"
+              : pathname.startsWith("/financial")
+                ? "Financial"
+                : pathname === "/budget"
         ? "Budget"
         : pathname.startsWith("/reports")
           ? "Reports"
@@ -48,6 +51,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
 
   const navigation = [
     ["/dashboard", "Dashboard", LayoutDashboard],
+    ["/financial", "Financial overview", BadgeDollarSign],
     ["/budget", "Budget vs. actual", Target],
     ["/expenses", "Expense tracker", Receipt],
     ["/bills", "Bills & recurring", CalendarDays],
@@ -59,6 +63,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
   ] as const;
 
   function isActive(href: string) {
+    if (href === "/financial") return pathname.startsWith("/financial");
     if (href === "/reports") return pathname.startsWith("/reports");
     if (href === "/bills") return pathname.startsWith("/bills");
     if (href === "/debts") return pathname.startsWith("/debts");
