@@ -1,5 +1,5 @@
-import { MonthlyBudgetReportView } from "@/components/monthly-budget-report";
+import { FinancialReports } from "@/components/financial-reports";
 
 export default function Page() {
-  return <MonthlyBudgetReportView />;
+  return <FinancialReports />;
 }

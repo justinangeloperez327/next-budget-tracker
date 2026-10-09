@@ -81,7 +81,7 @@ export function HistoricalBudgetAnalysisView() {
             href="/reports"
             className="mt-3 inline-block text-sm underline underline-offset-4"
           >
-            Back to monthly report
+            Back to reports
           </Link>
         </div>
         <div className="space-y-2">
