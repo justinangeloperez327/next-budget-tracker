@@ -85,6 +85,7 @@ const data: BudgetData = {
       destinationType: "Family / person",
       sentAmount: 30000,
       feeAmount: 1000,
+      receivedAmount: 465000,
       transferDate: "2026-10-07",
       status: "Completed",
       principalAsExpense: true,
