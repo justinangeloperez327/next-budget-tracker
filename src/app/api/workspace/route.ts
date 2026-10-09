@@ -26,6 +26,7 @@ export async function GET() {
             mp2Accounts: { include: { deposits: true } },
             recurringBills: { include: { payments: true } },
             debts: { include: { payments: true } },
+            savingsGoals: { include: { deposits: true } },
           },
         }),
       { isolationLevel: "RepeatableRead" },
@@ -167,6 +168,31 @@ export async function GET() {
             ...(payment.notes ? { notes: payment.notes } : {}),
           })),
         ),
+        savingsGoals: snapshot.savingsGoals.map((goal) => ({
+          id: goal.id,
+          name: goal.name,
+          targetAmount: Number(goal.targetAmount),
+          startDate: goal.startDate,
+          ...(goal.targetDate ? { targetDate: goal.targetDate } : {}),
+          ...(goal.monthlyTarget === null
+            ? {}
+            : { monthlyTarget: Number(goal.monthlyTarget) }),
+          ...(goal.destination ? { destination: goal.destination } : {}),
+          active: goal.active,
+          ...(goal.notes ? { notes: goal.notes } : {}),
+        })),
+        savingsDeposits: snapshot.savingsGoals.flatMap((goal) =>
+          goal.deposits.map((deposit) => ({
+            id: deposit.id,
+            goalId: deposit.goalId,
+            amount: Number(deposit.amount),
+            depositDate: deposit.depositDate,
+            ...(deposit.referenceNumber
+              ? { referenceNumber: deposit.referenceNumber }
+              : {}),
+            ...(deposit.notes ? { notes: deposit.notes } : {}),
+          })),
+        ),
       },
     });
   } catch (error) {
@@ -204,6 +230,8 @@ export async function PUT(request: Request) {
     const billPayments = data.billPayments ?? [];
     const debts = data.debts ?? [];
     const debtPayments = data.debtPayments ?? [];
+    const savingsGoals = data.savingsGoals ?? [];
+    const savingsDeposits = data.savingsDeposits ?? [];
     const revision = Number(input.revision);
     await db().$transaction(async (tx) => {
       const updated = await tx.user.updateMany({
@@ -216,6 +244,7 @@ export async function PUT(request: Request) {
           "Your notebook changed in another tab or device. Reload before editing again.",
         );
 
+      await tx.savingsGoal.deleteMany({ where: { userId: user.id } });
       await tx.debt.deleteMany({ where: { userId: user.id } });
       await tx.recurringBill.deleteMany({ where: { userId: user.id } });
       await tx.mp2Account.deleteMany({ where: { userId: user.id } });
@@ -389,6 +418,37 @@ export async function PUT(request: Request) {
             expenseId: payment.expenseId,
             referenceNumber: payment.referenceNumber ?? null,
             notes: payment.notes ?? null,
+          })),
+        });
+
+      if (savingsGoals.length)
+        await tx.savingsGoal.createMany({
+          data: savingsGoals.map((goal) => ({
+            id: goal.id,
+            userId: user.id,
+            name: goal.name,
+            targetAmount: BigInt(goal.targetAmount),
+            startDate: goal.startDate,
+            targetDate: goal.targetDate ?? null,
+            monthlyTarget:
+              goal.monthlyTarget === undefined
+                ? null
+                : BigInt(goal.monthlyTarget),
+            destination: goal.destination ?? null,
+            active: goal.active,
+            notes: goal.notes ?? null,
+          })),
+        });
+
+      if (savingsDeposits.length)
+        await tx.savingsDeposit.createMany({
+          data: savingsDeposits.map((deposit) => ({
+            id: deposit.id,
+            goalId: deposit.goalId,
+            amount: BigInt(deposit.amount),
+            depositDate: deposit.depositDate,
+            referenceNumber: deposit.referenceNumber ?? null,
+            notes: deposit.notes ?? null,
           })),
         });
     });

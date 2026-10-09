@@ -1,13 +1,21 @@
 "use client";
 import Link from "next/link";
 import { NotebookNote } from "@/components/sakura-companion";
-import { CalendarDays, HandCoins, Wallet, Receipt, Target } from "lucide-react";
+import {
+  CalendarDays,
+  HandCoins,
+  PiggyBank,
+  Wallet,
+  Receipt,
+  Target,
+} from "lucide-react";
 import { SpotlightCard } from "@/components/kokonutui/spotlight-cards";
 import { useState } from "react";
 import { useBudget } from "@/components/budget-provider";
 import { categories, money, total } from "@/lib/budget";
 import { billOccurrencesForPeriod } from "@/lib/bills";
 import { debtDashboardSnapshot } from "@/lib/debt";
+import { savingsDashboardSnapshot } from "@/lib/savings";
 import { ExpenseEditor } from "@/components/expense-editor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -35,6 +43,11 @@ export function Dashboard() {
   const debtSummary = debtDashboardSnapshot(
     data.debts ?? [],
     data.debtPayments ?? [],
+    today,
+  );
+  const savingsSummary = savingsDashboardSnapshot(
+    data.savingsGoals ?? [],
+    data.savingsDeposits ?? [],
     today,
   );
   const spent = total(expenses),
@@ -65,7 +78,7 @@ export function Dashboard() {
           }}
         />
       </div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {[
           {
             label: budget && spent > budget ? "Over budget" : "Remaining",
@@ -114,6 +127,17 @@ export function Dashboard() {
             description: debtSummary.overdueCount
               ? `${debtSummary.overdueCount} overdue debt${debtSummary.overdueCount === 1 ? "" : "s"}`
               : `${debtSummary.activeCount} active debt${debtSummary.activeCount === 1 ? "" : "s"}`,
+          },
+          {
+            label: "Savings goals",
+            value: money(savingsSummary.totalSaved),
+            icon: PiggyBank,
+            color: savingsSummary.pastDueCount
+              ? "var(--destructive)"
+              : "var(--primary)",
+            description: savingsSummary.pastDueCount
+              ? `${savingsSummary.pastDueCount} goal${savingsSummary.pastDueCount === 1 ? "" : "s"} past target date`
+              : `${savingsSummary.activeCount} active · ${savingsSummary.completedCount} completed`,
           },
         ].map(({ label, value, icon, color, description }, index) => (
           <SpotlightCard

@@ -87,6 +87,8 @@ try {
   assert.equal((await request("/mp2/history", { cookie })).status, 200);
   assert.equal((await request("/bills", { cookie })).status, 200);
   assert.equal((await request("/debts", { cookie })).status, 200);
+  assert.equal((await request("/savings", { cookie })).status, 200);
+  assert.equal((await request("/savings/history", { cookie })).status, 200);
   const initial = await (await request("/api/workspace", { cookie })).json();
   assert.equal(initial.user.email, email);
   assert.equal(initial.revision, 0);
@@ -98,6 +100,7 @@ try {
   const rentExpenseId = randomUUID();
   const debtId = randomUUID();
   const debtExpenseId = randomUUID();
+  const savingsGoalId = randomUUID();
   const data = {
     expenses: [
       {
@@ -251,6 +254,29 @@ try {
         referenceNumber: "DEBT-PAY-001",
       },
     ],
+    savingsGoals: [
+      {
+        id: savingsGoalId,
+        name: "Emergency fund",
+        targetAmount: 1000000,
+        startDate: "2026-01-01",
+        targetDate: "2026-12-31",
+        monthlyTarget: 100000,
+        destination: "UAE Savings Bank",
+        active: true,
+        notes: "Integration test savings goal",
+      },
+    ],
+    savingsDeposits: [
+      {
+        id: randomUUID(),
+        goalId: savingsGoalId,
+        amount: 150000,
+        depositDate: "2026-10-08",
+        referenceNumber: "SAVE-001",
+        notes: "Integration test savings",
+      },
+    ],
   };
   assert.equal(
     (
@@ -305,6 +331,8 @@ try {
       billPayments: [],
       debts: [],
       debtPayments: [],
+      savingsGoals: [],
+      savingsDeposits: [],
     },
   );
   assert.equal(
@@ -358,6 +386,8 @@ try {
       billPayments: [],
       debts: [],
       debtPayments: [],
+      savingsGoals: [],
+      savingsDeposits: [],
     },
   );
   console.log(

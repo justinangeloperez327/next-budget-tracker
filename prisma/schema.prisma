@@ -21,6 +21,7 @@ model User {
   mp2Accounts        Mp2Account[]
   recurringBills     RecurringBill[]
   debts              Debt[]
+  savingsGoals       SavingsGoal[]
 }
 
 model Session {
@@ -188,6 +189,35 @@ model DebtPayment {
 
   @@index([debtId, paymentDate])
   @@index([expenseId])
+}
+
+model SavingsGoal {
+  id            String           @id
+  userId        String
+  name          String
+  targetAmount  BigInt
+  startDate     String
+  targetDate    String?
+  monthlyTarget BigInt?
+  destination   String?
+  active        Boolean          @default(true)
+  notes         String?
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deposits      SavingsDeposit[]
+
+  @@index([userId])
+}
+
+model SavingsDeposit {
+  id              String      @id
+  goalId          String
+  amount          BigInt
+  depositDate     String
+  referenceNumber String?
+  notes           String?
+  goal            SavingsGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, depositDate])
 }
 
 model AuthAttempt {
