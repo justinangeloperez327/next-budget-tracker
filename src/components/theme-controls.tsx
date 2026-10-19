@@ -17,7 +17,7 @@ import {
   setCharacterTheme,
   useCharacterTheme,
 } from "@/components/character-theme";
-import { characterThemes } from "@/lib/character-theme";
+import { characterThemes, characterThemeLabels } from "@/lib/character-theme";
 
 const subscribe = () => () => {};
 export function AppearanceProvider({
@@ -81,7 +81,7 @@ export function ThemeControls() {
             <Palette className="size-4" aria-hidden="true" />
           </Button>
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent className="max-h-[85dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Choose your theme</DialogTitle>
             <DialogDescription>
@@ -110,13 +110,7 @@ export function ThemeControls() {
                     theme={value}
                     className="h-20 w-full max-w-20"
                   />
-                  <span>
-                    {value === "sakura"
-                      ? "Sakura"
-                      : value === "kuromi"
-                        ? "Kuromi"
-                        : "Keroppi"}
-                  </span>
+                  <span>{characterThemeLabels[value]}</span>
                 </label>
               ))}
             </div>

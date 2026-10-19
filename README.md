@@ -129,8 +129,8 @@ Playwright starts and stops its own production server on `127.0.0.1:3100`; it re
 
 ## UI
 
-Sakura is the default theme, with the original warm pink palette, notebook paper details, flower mark, and cat companion. Two additional character themes are available: Kuromi (purple, black, and pink) and Keroppi (green and mint), with matching decorative character artwork.
+Sakura is the default theme, with the original warm pink palette, notebook paper details, flower mark, and cat companion. Additional themes include Kuromi (purple and pink), Keroppi (green and mint), Vegeta (royal blue and gold), Naruto (orange), Kakashi (sage and silver), Sasuke (indigo and violet), and Ichigo (black and orange), each with matching local SVG character artwork.
 
 Use the palette button in the appearance controls to choose a character theme. Character choice is independent of Light, Dark, or System appearance, persists across reloads and sign-in, and syncs across open tabs. The saved palette is applied before paint. Browsers with blocked storage can still change the current tab's theme.
 
-The dashboard graph, mobile navigation, account-session fixes, and Playwright coverage remain in place. Character selection does not change financial data. Browser tests cover the default Sakura theme, all three character selections, persistence, and appearance combinations on desktop and mobile.
+The dashboard graph, mobile navigation, account-session fixes, and Playwright coverage remain in place. Character selection does not change financial data. Browser tests cover the default Sakura theme, all eight character selections, persistence, and appearance combinations on desktop and mobile.

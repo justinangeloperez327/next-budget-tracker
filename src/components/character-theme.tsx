@@ -2,9 +2,11 @@
 
 import { useSyncExternalStore } from "react";
 import { Flower2 } from "lucide-react";
+import { AnimeCompanion } from "@/components/anime-companion";
 import { SakuraCat } from "@/components/sakura-companion";
 import {
   CHARACTER_THEME_KEY,
+  characterThemeLabels,
   isCharacterTheme,
   type CharacterTheme,
 } from "@/lib/character-theme";
@@ -57,6 +59,8 @@ export function ThemeCompanion({
   const current = useCharacterTheme();
   const character = theme ?? current;
   if (character === "sakura") return <SakuraCat className={className} />;
+  if (character !== "kuromi" && character !== "keroppi")
+    return <AnimeCompanion character={character} className={className} />;
   return (
     <svg
       aria-hidden="true"
@@ -167,12 +171,7 @@ export function ThemeStamp() {
   return (
     <span className="inline-flex items-center gap-2 rounded-md border border-dashed bg-card px-3 py-1.5 text-xs text-primary">
       <Flower2 size={14} aria-hidden="true" />
-      {theme === "sakura"
-        ? "Sakura"
-        : theme === "kuromi"
-          ? "Kuromi"
-          : "Keroppi"}{" "}
-      notebook
+      {characterThemeLabels[theme]} notebook
     </span>
   );
 }

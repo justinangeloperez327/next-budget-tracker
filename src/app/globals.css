@@ -194,3 +194,143 @@
   --sakura: #45683b;
   --notebook-line: #344d36;
 }
+
+:root[data-character="vegeta"] {
+  --background: #f3f6fc;
+  --foreground: #202c45;
+  --card: #fcfdff;
+  --primary: #2856a2;
+  --muted: #e5ebf7;
+  --muted-foreground: #586985;
+  --border: #cdd8ec;
+  --sakura: #e9d498;
+  --primary-foreground: #ffffff;
+  --ring: #2856a2;
+  --notebook-line: #cdd8ec;
+}
+
+.dark[data-character="vegeta"] {
+  --background: #161e30;
+  --foreground: #edf2ff;
+  --card: #202c42;
+  --primary: #a8c5ff;
+  --muted: #2b3b56;
+  --muted-foreground: #b5c5df;
+  --border: #405575;
+  --sakura: #867348;
+  --primary-foreground: #161e30;
+  --ring: #a8c5ff;
+  --notebook-line: #405575;
+}
+
+:root[data-character="naruto"] {
+  --background: #fff8f0;
+  --foreground: #3d2b22;
+  --card: #fffdf8;
+  --primary: #a54b13;
+  --muted: #f8eadb;
+  --muted-foreground: #7c604f;
+  --border: #e7d2bd;
+  --sakura: #f4bf75;
+  --primary-foreground: #ffffff;
+  --ring: #a54b13;
+  --notebook-line: #e7d2bd;
+}
+
+.dark[data-character="naruto"] {
+  --background: #261e19;
+  --foreground: #fff1e2;
+  --card: #33271f;
+  --primary: #ffb36b;
+  --muted: #453326;
+  --muted-foreground: #d4b8a0;
+  --border: #654b37;
+  --sakura: #8d592c;
+  --primary-foreground: #261e19;
+  --ring: #ffb36b;
+  --notebook-line: #654b37;
+}
+
+:root[data-character="kakashi"] {
+  --background: #f2f6f3;
+  --foreground: #26382e;
+  --card: #fbfdfb;
+  --primary: #3d6950;
+  --muted: #e3ece6;
+  --muted-foreground: #5b7163;
+  --border: #cbdcd0;
+  --sakura: #b6c6c1;
+  --primary-foreground: #ffffff;
+  --ring: #3d6950;
+  --notebook-line: #cbdcd0;
+}
+
+.dark[data-character="kakashi"] {
+  --background: #19251f;
+  --foreground: #eaf3ee;
+  --card: #23332a;
+  --primary: #a3ceb4;
+  --muted: #304539;
+  --muted-foreground: #b2c9bc;
+  --border: #46604f;
+  --sakura: #526b61;
+  --primary-foreground: #19251f;
+  --ring: #a3ceb4;
+  --notebook-line: #46604f;
+}
+
+:root[data-character="sasuke"] {
+  --background: #f5f4fb;
+  --foreground: #2f2946;
+  --card: #fdfbff;
+  --primary: #60449a;
+  --muted: #eae5f4;
+  --muted-foreground: #6d6082;
+  --border: #d9d0e8;
+  --sakura: #c4b5e5;
+  --primary-foreground: #ffffff;
+  --ring: #60449a;
+  --notebook-line: #d9d0e8;
+}
+
+.dark[data-character="sasuke"] {
+  --background: #1d1b2b;
+  --foreground: #f1ecff;
+  --card: #292538;
+  --primary: #bfaff0;
+  --muted: #39324f;
+  --muted-foreground: #bfb2d9;
+  --border: #514467;
+  --sakura: #63508e;
+  --primary-foreground: #1d1b2b;
+  --ring: #bfaff0;
+  --notebook-line: #514467;
+}
+
+:root[data-character="ichigo"] {
+  --background: #fff6f0;
+  --foreground: #392c28;
+  --card: #fffcf9;
+  --primary: #a74320;
+  --muted: #f5e7de;
+  --muted-foreground: #7c6056;
+  --border: #e7d0c3;
+  --sakura: #edb28b;
+  --primary-foreground: #ffffff;
+  --ring: #a74320;
+  --notebook-line: #e7d0c3;
+}
+
+.dark[data-character="ichigo"] {
+  --background: #211d1c;
+  --foreground: #fff0e9;
+  --card: #2e2724;
+  --primary: #ffa780;
+  --muted: #41342e;
+  --muted-foreground: #d2b8aa;
+  --border: #604a3f;
+  --sakura: #88543b;
+  --primary-foreground: #211d1c;
+  --ring: #ffa780;
+  --notebook-line: #604a3f;
+}

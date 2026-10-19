@@ -73,6 +73,7 @@ test("appearance is keyboard accessible and survives reload", async ({
 test("Sakura is the default and character themes persist across pages and appearances", async ({
   page,
 }, testInfo) => {
+  test.setTimeout(90_000);
   await page.goto("/");
   await expect(page.locator("html")).toHaveAttribute(
     "data-character",
@@ -84,6 +85,11 @@ test("Sakura is the default and character themes persist across pages and appear
   for (const [value, label] of [
     ["kuromi", "Kuromi"],
     ["keroppi", "Keroppi"],
+    ["vegeta", "Vegeta"],
+    ["naruto", "Naruto"],
+    ["kakashi", "Kakashi"],
+    ["sasuke", "Sasuke"],
+    ["ichigo", "Ichigo"],
     ["sakura", "Sakura"],
   ]) {
     await page.getByRole("button", { name: "Choose character theme" }).click();

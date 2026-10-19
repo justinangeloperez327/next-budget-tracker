@@ -3,18 +3,19 @@ import assert from "node:assert/strict";
 import { runInNewContext } from "node:vm";
 import {
   characterThemeScript,
+  characterThemes,
   isCharacterTheme,
 } from "../src/lib/character-theme.ts";
 
 test("only supported character themes are accepted", () => {
-  for (const value of ["sakura", "kuromi", "keroppi"])
+  for (const value of characterThemes)
     assert.equal(isCharacterTheme(value), true);
   for (const value of [null, undefined, "teal", "dark", "<script>"])
     assert.equal(isCharacterTheme(value), false);
 });
 
 test("prepaint script restores a saved theme and ignores invalid storage", () => {
-  for (const saved of ["sakura", "kuromi", "keroppi", null, "invalid"]) {
+  for (const saved of [...characterThemes, null, "invalid"]) {
     const document = { documentElement: { dataset: { character: "sakura" } } };
     runInNewContext(characterThemeScript, {
       document,
