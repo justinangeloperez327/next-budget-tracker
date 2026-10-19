@@ -20,6 +20,7 @@ import { savingsDashboardSnapshot } from "@/lib/savings";
 import { remittanceMonthSummary } from "@/lib/remittance";
 import { financialReminders, reminderSummary } from "@/lib/reminders";
 import { ExpenseEditor } from "@/components/expense-editor";
+import { SpendingTrend } from "@/components/spending-trend";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -174,7 +175,9 @@ export function Dashboard() {
           <SpotlightCard
             key={label}
             className={
-              index === 0 ? "notebook-note md:col-span-2 xl:col-span-1" : undefined
+              index === 0
+                ? "notebook-note md:col-span-2 xl:col-span-1"
+                : undefined
             }
             item={{ title: label, description, icon, color }}
           >
@@ -194,6 +197,12 @@ export function Dashboard() {
           Review reminders
         </Link>
       </div>
+      <SpendingTrend
+        key={month}
+        expenses={data.expenses}
+        month={month}
+        budget={budget}
+      />
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
