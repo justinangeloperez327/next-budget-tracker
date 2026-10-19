@@ -1,6 +1,5 @@
 "use client";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { emptyData, validData, type BudgetData } from "@/lib/budget";
 import { validWorkspace } from "@/lib/workspace-validation";
 type Context = {
@@ -16,7 +15,6 @@ type Context = {
 };
 const BudgetContext = createContext<Context | null>(null);
 export function BudgetProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const [data, setData] = useState<BudgetData>(emptyData);
   const [ready, setReady] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -119,8 +117,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
       setData(emptyData);
       setEmail(null);
       setLoaded(false);
-      router.replace("/login");
-      router.refresh();
+      window.location.replace("/login");
     } catch (cause) {
       setSaveError(
         cause instanceof Error ? cause.message : "Unable to sign out.",

@@ -10,7 +10,6 @@ import {
   Receipt,
   Target,
 } from "lucide-react";
-import { SpotlightCard } from "@/components/kokonutui/spotlight-cards";
 import { useState } from "react";
 import { useBudget } from "@/components/budget-provider";
 import { categories, money, total } from "@/lib/budget";
@@ -63,6 +62,82 @@ export function Dashboard() {
   const spent = total(expenses),
     budget = data.budgets[month] || 0;
   const [status, setStatus] = useState("");
+  const metrics = [
+    {
+      label: budget && spent > budget ? "Over budget" : "Remaining",
+      value: budget ? money(Math.abs(budget - spent)) : "Set a budget",
+      icon: Target,
+      color: budget && spent > budget ? "var(--destructive)" : "var(--primary)",
+      description: budget
+        ? spent > budget
+          ? "Review your monthly plan"
+          : "Available within your plan"
+        : "Create your monthly plan below",
+    },
+    {
+      label: "Monthly budget",
+      value: money(budget),
+      icon: Wallet,
+      color: "var(--primary)",
+      description: "Your plan for the month",
+    },
+    {
+      label: "Total spent",
+      value: money(spent),
+      icon: Receipt,
+      color: "var(--muted-foreground)",
+      description: `${expenses.length} expenses recorded`,
+    },
+    {
+      label: "Bills outstanding",
+      value: money(billsOutstanding),
+      icon: CalendarDays,
+      color: overdueBills ? "var(--destructive)" : "var(--primary)",
+      description: overdueBills
+        ? `${overdueBills} overdue bill${overdueBills === 1 ? "" : "s"}`
+        : `${billOccurrences.filter((entry) => !entry.payment).length} still due`,
+    },
+    {
+      label: "Debt remaining",
+      value: money(debtSummary.remaining),
+      icon: HandCoins,
+      color: debtSummary.overdueCount ? "var(--destructive)" : "var(--primary)",
+      description: debtSummary.overdueCount
+        ? `${debtSummary.overdueCount} overdue debt${debtSummary.overdueCount === 1 ? "" : "s"}`
+        : `${debtSummary.activeCount} active debt${debtSummary.activeCount === 1 ? "" : "s"}`,
+    },
+    {
+      label: "Savings goals",
+      value: money(savingsSummary.totalSaved),
+      icon: PiggyBank,
+      color: savingsSummary.pastDueCount
+        ? "var(--destructive)"
+        : "var(--primary)",
+      description: savingsSummary.pastDueCount
+        ? `${savingsSummary.pastDueCount} goal${savingsSummary.pastDueCount === 1 ? "" : "s"} past target date`
+        : `${savingsSummary.activeCount} active · ${savingsSummary.completedCount} completed`,
+    },
+    {
+      label: "Remitted this month",
+      value: money(remittanceSummary.sentAmount),
+      icon: Send,
+      color: remittanceSummary.pendingCount
+        ? "var(--muted-foreground)"
+        : "var(--primary)",
+      description: remittanceSummary.pendingCount
+        ? `${remittanceSummary.pendingCount} transfer${remittanceSummary.pendingCount === 1 ? "" : "s"} pending · ${money(remittanceSummary.feeAmount)} fees`
+        : `${remittanceSummary.count} transfer${remittanceSummary.count === 1 ? "" : "s"} · ${money(remittanceSummary.feeAmount)} fees`,
+    },
+    {
+      label: "Reminders",
+      value: String(remindersSummary.total),
+      icon: BellRing,
+      color: remindersSummary.overdue ? "var(--destructive)" : "var(--primary)",
+      description: remindersSummary.overdue
+        ? `${remindersSummary.overdue} overdue · ${remindersSummary.dueSoon} due soon`
+        : `${remindersSummary.dueSoon} due soon · ${remindersSummary.pending} pending`,
+    },
+  ];
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -88,107 +163,63 @@ export function Dashboard() {
           }}
         />
       </div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {[
-          {
-            label: budget && spent > budget ? "Over budget" : "Remaining",
-            value: budget ? money(Math.abs(budget - spent)) : "Set a budget",
-            icon: Target,
-            color:
-              budget && spent > budget
-                ? "var(--destructive)"
-                : "var(--primary)",
-            description: budget
-              ? spent > budget
-                ? "Review your monthly plan"
-                : "Available within your plan"
-              : "Create your monthly plan below",
-          },
-          {
-            label: "Monthly budget",
-            value: money(budget),
-            icon: Wallet,
-            color: "var(--primary)",
-            description: "Your plan for the month",
-          },
-          {
-            label: "Total spent",
-            value: money(spent),
-            icon: Receipt,
-            color: "var(--muted-foreground)",
-            description: `${expenses.length} expenses recorded`,
-          },
-          {
-            label: "Bills outstanding",
-            value: money(billsOutstanding),
-            icon: CalendarDays,
-            color: overdueBills ? "var(--destructive)" : "var(--primary)",
-            description: overdueBills
-              ? `${overdueBills} overdue bill${overdueBills === 1 ? "" : "s"}`
-              : `${billOccurrences.filter((entry) => !entry.payment).length} still due`,
-          },
-          {
-            label: "Debt remaining",
-            value: money(debtSummary.remaining),
-            icon: HandCoins,
-            color: debtSummary.overdueCount
-              ? "var(--destructive)"
-              : "var(--primary)",
-            description: debtSummary.overdueCount
-              ? `${debtSummary.overdueCount} overdue debt${debtSummary.overdueCount === 1 ? "" : "s"}`
-              : `${debtSummary.activeCount} active debt${debtSummary.activeCount === 1 ? "" : "s"}`,
-          },
-          {
-            label: "Savings goals",
-            value: money(savingsSummary.totalSaved),
-            icon: PiggyBank,
-            color: savingsSummary.pastDueCount
-              ? "var(--destructive)"
-              : "var(--primary)",
-            description: savingsSummary.pastDueCount
-              ? `${savingsSummary.pastDueCount} goal${savingsSummary.pastDueCount === 1 ? "" : "s"} past target date`
-              : `${savingsSummary.activeCount} active · ${savingsSummary.completedCount} completed`,
-          },
-          {
-            label: "Remitted this month",
-            value: money(remittanceSummary.sentAmount),
-            icon: Send,
-            color: remittanceSummary.pendingCount
-              ? "var(--muted-foreground)"
-              : "var(--primary)",
-            description: remittanceSummary.pendingCount
-              ? `${remittanceSummary.pendingCount} transfer${remittanceSummary.pendingCount === 1 ? "" : "s"} pending · ${money(remittanceSummary.feeAmount)} fees`
-              : `${remittanceSummary.count} transfer${remittanceSummary.count === 1 ? "" : "s"} · ${money(remittanceSummary.feeAmount)} fees`,
-          },
-          {
-            label: "Reminders",
-            value: String(remindersSummary.total),
-            icon: BellRing,
-            color: remindersSummary.overdue
-              ? "var(--destructive)"
-              : "var(--primary)",
-            description: remindersSummary.overdue
-              ? `${remindersSummary.overdue} overdue · ${remindersSummary.dueSoon} due soon`
-              : `${remindersSummary.dueSoon} due soon · ${remindersSummary.pending} pending`,
-          },
-        ].map(({ label, value, icon, color, description }, index) => (
-          <SpotlightCard
-            key={label}
-            className={
-              index === 0
-                ? "notebook-note md:col-span-2 xl:col-span-1"
-                : undefined
-            }
-            item={{ title: label, description, icon, color }}
-          >
-            <p
-              className={`break-words font-medium tabular-nums tracking-tight ${index === 0 ? "text-3xl" : "text-2xl"}`}
+      <section
+        aria-label="Monthly budget summary"
+        className="grid grid-cols-2 gap-px overflow-hidden rounded-md border bg-border sm:grid-cols-3"
+      >
+        {metrics
+          .slice(0, 3)
+          .map(({ label, value, description, color }, index) => (
+            <div
+              key={label}
+              className={`min-w-0 bg-card p-4 sm:p-6 ${index === 0 ? "col-span-2 sm:col-span-1" : ""}`}
             >
-              {value}
-            </p>
-          </SpotlightCard>
-        ))}
-      </div>
+              <p className="text-sm text-muted-foreground">{label}</p>
+              <p
+                className="financial-value mt-3 break-words text-2xl font-medium sm:text-3xl"
+                style={index === 0 ? { color } : undefined}
+              >
+                {value}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                {description}
+              </p>
+            </div>
+          ))}
+      </section>
+      <section
+        aria-label="Commitments and savings"
+        className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-5"
+      >
+        {metrics
+          .slice(3)
+          .map(({ label, value, icon: Icon, description, color }, index) => (
+            <Link
+              key={label}
+              href={
+                ["/bills", "/debts", "/savings", "/remittances", "/reminders"][
+                  index
+                ]
+              }
+              className="min-w-0 rounded-md border bg-card p-4 transition-colors hover:border-primary/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Icon
+                  className="size-4 shrink-0"
+                  style={{ color }}
+                  aria-hidden="true"
+                />
+                <span>{label}</span>
+              </div>
+              <p className="financial-value mt-3 break-words text-xl font-medium">
+                {value}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                {description}
+              </p>
+            </Link>
+          ))}
+      </section>
       <div className="mt-4 flex justify-end">
         <Link
           href="/reminders"

@@ -37,3 +37,15 @@ jobs:
       - run: npm run db:deploy
       - run: npm run build
       - run: npm run test:integration
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+        env:
+          E2E_DATABASE_URL: postgresql://budget_test:test_only_password@localhost:5432/budget_tracker_test
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-results
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14

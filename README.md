@@ -109,10 +109,26 @@ npm run build
 npm run test:integration
 ```
 
-GitHub Actions runs lint, type checking, unit tests, Prisma migrations, production build, and authenticated integration tests against an isolated PostgreSQL service.
+GitHub Actions runs lint, type checking, unit tests, Prisma migrations, a production build, API integration tests, and Playwright browser tests against an isolated PostgreSQL service. Browser tests run in desktop and mobile Chromium; reports, screenshots, and failure traces are uploaded as workflow artifacts.
+
+### Playwright
+
+The browser suite checks public-page responsiveness, protected routes, password confirmation and visibility, registration, login/logout, persistent budget and expense edits, chart controls, mobile navigation, theme persistence, concurrent-save protection, and failed-load recovery. It uses real accounts and persistence in a dedicated test database, with one intercepted workspace response to exercise the unavailable state.
+
+Set `E2E_DATABASE_URL` to an isolated **local** PostgreSQL database named `budget_tracker_test`. The configuration rejects remote hosts and other database names. Apply migrations to that same test database before running. Do not use your personal or production database.
+
+```sh
+npx playwright install --with-deps chromium
+npm run build
+npm run test:e2e
+# Optional interactive test runner:
+npm run test:e2e:ui
+```
+
+Playwright starts and stops its own production server on `127.0.0.1:3100`; it refuses to reuse an unrelated running server. CI supplies the isolated database automatically. No Vercel environment changes are needed. For constrained local environments, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can point to a compatible installed Chromium binary; CI installs Playwright's matching browser instead.
 
 ## UI
 
-The interface uses shadcn/ui-style components with a restrained notebook-inspired visual system. Light, Dark, and System appearance controls are provided through `next-themes`. Decorative Sakura elements do not carry financial meaning and are hidden from assistive technology where appropriate.
+The interface uses shadcn/ui-style components with cool neutral surfaces, restrained teal accents, compact corners, tabular financial values, and separate AED/PHP context. The dashboard leads with the monthly budget summary and spending graph; commitments link to their own trackers. Mobile navigation uses an accessible dialog, with focus trapping and Escape-to-close behavior. Light, Dark, and System appearance controls are provided through `next-themes`.
 
-Kokonut UI-derived components are attributed in `THIRD_PARTY_NOTICES.md`.
+The former floral decorations, animated hero, and hover-tilting cards have been removed. Browser reports and test data are never included in the product build.

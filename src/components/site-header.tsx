@@ -1,9 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
-import { Flower2, ArrowUpRight, LogOut, LayoutDashboard } from "lucide-react";
+import {
+  ChartNoAxesCombined,
+  ArrowUpRight,
+  LogOut,
+  LayoutDashboard,
+} from "lucide-react";
 import { ThemeControls } from "@/components/theme-controls";
 import { Button } from "@/components/ui/button";
 
@@ -19,7 +24,7 @@ export function Brand() {
       className="inline-flex items-center gap-2.5 font-medium tracking-tight"
     >
       <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-        <Flower2 size={17} aria-hidden="true" />
+        <ChartNoAxesCombined size={17} aria-hidden="true" />
       </span>
       Budget Tracker
     </Link>
@@ -28,7 +33,6 @@ export function Brand() {
 
 export function SiteHeader({ account }: { account: PublicAccount | null }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState("");
   const busy = useRef(false);
@@ -41,8 +45,7 @@ export function SiteHeader({ account }: { account: PublicAccount | null }) {
     try {
       const response = await fetch("/api/auth/logout", { method: "POST" });
       if (!response.ok) throw new Error("Unable to sign out.");
-      router.replace("/login");
-      router.refresh();
+      window.location.replace("/login");
     } catch {
       setSignOutError("Sign out failed. Please try again.");
     } finally {
@@ -53,16 +56,19 @@ export function SiteHeader({ account }: { account: PublicAccount | null }) {
 
   return (
     <header className="border-b bg-card">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:flex-nowrap sm:px-6">
+      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:flex sm:flex-wrap sm:px-6">
         <Brand />
         {signOutError ? (
-          <p role="alert" className="text-sm text-destructive">
+          <p
+            role="alert"
+            className="order-last col-span-2 w-full text-sm text-destructive"
+          >
             {signOutError}
           </p>
         ) : null}
         <nav
           aria-label="Main navigation"
-          className="no-scrollbar -mx-1 flex w-[calc(100%+0.5rem)] items-center gap-1 overflow-x-auto px-1 text-sm sm:mx-0 sm:w-auto sm:overflow-visible sm:px-0"
+          className="col-span-2 row-start-2 flex flex-wrap items-center justify-between gap-1 text-sm sm:order-2 sm:ml-auto sm:w-auto sm:justify-start"
         >
           {[
             ["/about", "About"],
@@ -118,9 +124,10 @@ export function SiteHeader({ account }: { account: PublicAccount | null }) {
               </Button>
             </>
           )}
-
-          <ThemeControls />
         </nav>
+        <div className="col-start-2 row-start-1 sm:order-3">
+          <ThemeControls />
+        </div>
       </div>
     </header>
   );

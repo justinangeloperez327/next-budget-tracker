@@ -1,152 +1,153 @@
-"use client";
-
 import Link from "next/link";
 import {
   ArrowRight,
+  ArrowLeftRight,
   BellRing,
   ChartNoAxesCombined,
   Landmark,
-  ListFilter,
+  Receipt,
   Send,
   Target,
 } from "lucide-react";
-import { SakuraStamp, SakuraCat } from "@/components/sakura-companion";
-import ShapeHero from "@/components/kokonutui/shape-hero";
-import SpotlightCards from "@/components/kokonutui/spotlight-cards";
 import { Button } from "@/components/ui/button";
 
 export function HomeContent() {
   return (
     <>
-      <ShapeHero className="my-8">
-        <div className="grid items-center gap-10 px-6 py-12 sm:p-12 lg:grid-cols-[1.1fr_1fr] lg:py-20">
-          <div>
-            <div className="mb-5">
-              <SakuraStamp />
+      <section className="grid gap-10 border-b py-12 sm:py-16 lg:grid-cols-[1.15fr_1fr] lg:items-center lg:gap-16 lg:py-24">
+        <div>
+          <p className="eyebrow">For life between the UAE and Philippines</p>
+          <h1 className="mt-5 max-w-xl text-4xl font-medium leading-[1.12] tracking-tight sm:text-5xl lg:text-6xl">
+            Two currencies.
+            <br />
+            One clearer month.
+          </h1>
+          <p className="mt-6 max-w-lg text-base leading-7 text-muted-foreground">
+            Plan your everyday spending in AED. Keep remittances, savings and
+            Philippine commitments in view, with each currency in its own place.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Button asChild>
+              <Link href="/register">
+                Create your account <ArrowRight aria-hidden="true" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/login">Log in</Link>
+            </Button>
+          </div>
+          <p className="mt-4 text-xs text-muted-foreground">
+            Start with your own records. Build a plan that fits your month.
+          </p>
+        </div>
+        <div className="border bg-card">
+          <div className="flex items-center justify-between border-b px-5 py-4">
+            <p className="text-sm font-medium">Your financial workspace</p>
+            <ArrowLeftRight
+              className="size-4 text-primary"
+              aria-hidden="true"
+            />
+          </div>
+          <div className="grid divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+            <div className="p-5 sm:p-6">
+              <span className="currency-label">AED</span>
+              <h2 className="mt-5 text-xl font-medium">Everyday in the UAE</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Monthly budgets, expenses, bills and debt.
+              </p>
+              <p className="mt-5 border-t pt-4 text-xs text-muted-foreground">
+                Plan · Record · Review
+              </p>
             </div>
-            <h1 className="max-w-xl text-4xl font-medium leading-[1.12] tracking-tight sm:text-5xl">
-              Make room for
-              <br />
-              <span className="text-primary">what matters.</span>
-            </h1>
-            <p className="mt-6 max-w-md leading-7 text-muted-foreground">
-              Plan in AED, keep Philippine commitments in view, and understand
-              where your money is going without mixing currencies or duplicating
-              transactions.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg">
-                <Link href="/register">
-                  Start tracking <ArrowRight />
-                </Link>
-              </Button>
-            </div>
-            <div className="mt-6 flex items-center gap-3">
-              <SakuraCat className="w-16" />
-              <p className="text-xs leading-5 text-muted-foreground">
-                Small steps, a calmer month.
-                <br />
-                Your account keeps your financial workspace in sync.
+            <div className="p-5 sm:p-6">
+              <span className="currency-label">PHP</span>
+              <h2 className="mt-5 text-xl font-medium">
+                Commitments back home
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                SSS, PhilHealth, Pag-IBIG and MP2.
+              </p>
+              <p className="mt-5 border-t pt-4 text-xs text-muted-foreground">
+                Track · Save · Stay on time
               </p>
             </div>
           </div>
-
-          <div className="min-w-0 rounded-xl border bg-card p-6 shadow-[0_12px_48px_-24px_rgba(24,24,27,0.16)] sm:p-8">
-            <p className="eyebrow">One financial workspace</p>
-            <h2 className="mt-3 text-xl font-medium tracking-tight">
-              Built for everyday life between the UAE and Philippines.
-            </h2>
-            <div className="mt-6 divide-y border-y">
-              {[
-                {
-                  icon: Target,
-                  title: "Plan and spend",
-                  description:
-                    "Budget vs. actual, expenses, recurring bills, and debt in AED.",
-                },
-                {
-                  icon: Send,
-                  title: "Send and save",
-                  description:
-                    "Track remittances, transfer fees, savings goals, and own-account transfers.",
-                },
-                {
-                  icon: Landmark,
-                  title: "Philippine commitments",
-                  description:
-                    "Keep SSS, PhilHealth, Pag-IBIG, and MP2 records in PHP.",
-                },
-                {
-                  icon: BellRing,
-                  title: "Stay ahead",
-                  description:
-                    "Use reminders, financial reports, and history to spot what needs attention.",
-                },
-              ].map(({ icon: Icon, title, description }) => (
-                <div className="flex gap-3 py-4" key={title}>
-                  <Icon className="mt-0.5 size-4 shrink-0 text-primary" />
-                  <div>
-                    <p className="text-sm font-medium">{title}</p>
-                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                      {description}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="mt-4 text-xs leading-5 text-muted-foreground">
-              New accounts start empty. Your workspace only shows the financial
-              records you enter.
+          <div className="flex items-start gap-3 border-t bg-muted/40 px-5 py-4">
+            <Send
+              className="mt-0.5 size-4 shrink-0 text-primary"
+              aria-hidden="true"
+            />
+            <p className="text-sm leading-6 text-muted-foreground">
+              Connect the two with remittance records: AED sent, PHP received
+              and the fees along the way.
             </p>
           </div>
         </div>
-      </ShapeHero>
-
-      <SpotlightCards
-        className="!bg-transparent !px-0"
-        eyebrow="A simpler financial habit"
-        heading="Everything you need to stay on track."
-        items={[
-          {
-            icon: ListFilter,
-            title: "Capture the everyday",
-            description:
-              "Record expenses and linked payments without double counting.",
-            color: "var(--primary)",
-          },
-          {
-            icon: Target,
-            title: "Keep plans measurable",
-            description:
-              "Compare monthly budgets, category limits, savings goals, bills, and debt.",
-            color: "var(--primary)",
-          },
-          {
-            icon: ChartNoAxesCombined,
-            title: "See the bigger picture",
-            description:
-              "Review AED and PHP activity separately through reports and financial history.",
-            color: "var(--primary)",
-          },
-        ]}
-      />
-
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-5 border-t py-8">
+      </section>
+      <section className="py-10 sm:py-14" aria-labelledby="home-features">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="eyebrow">A useful monthly routine</p>
+            <h2 id="home-features" className="mt-2 text-2xl font-medium">
+              Know what came in, went out, and needs attention.
+            </h2>
+          </div>
+        </div>
+        <div className="mt-6 grid gap-0 border-y sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            {
+              icon: Target,
+              title: "Set your plan",
+              text: "Give the month a budget and compare spending by category.",
+            },
+            {
+              icon: Receipt,
+              title: "Keep a clear record",
+              text: "Track expenses and linked payments without counting them twice.",
+            },
+            {
+              icon: Landmark,
+              title: "Keep commitments in view",
+              text: "Review bills, contributions, savings goals and debt together.",
+            },
+            {
+              icon: ChartNoAxesCombined,
+              title: "See your progress",
+              text: "Use spending graphs and reports to understand each month.",
+            },
+          ].map(({ icon: Icon, title, text }) => (
+            <div
+              key={title}
+              className="border-b px-0 py-6 last:border-b-0 sm:px-4 lg:border-b-0 lg:border-r lg:first:pl-0 lg:last:border-r-0"
+            >
+              <Icon className="size-5 text-primary" aria-hidden="true" />
+              <h3 className="mt-4 text-sm font-medium">{title}</h3>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {text}
+              </p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-5 flex items-center gap-2 text-sm text-muted-foreground">
+          <BellRing className="size-4 shrink-0" aria-hidden="true" />
+          In-app reminders help you spot what needs attention next.
+        </div>
+      </section>
+      <section className="flex flex-wrap items-center justify-between gap-5 border-t py-8">
         <div>
-          <h2 className="text-xl font-medium tracking-tight">
-            Your next month starts with one small step.
+          <h2 className="text-xl font-medium">
+            Make your next month easier to read.
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Set a budget, record what matters, and let the reports build from
-            your real data.
+            Your records, your plan, and a clearer view of what remains.
           </p>
         </div>
         <Button asChild variant="outline">
           <Link href="/dashboard">
-            Open your workspace <ArrowRight />
+            Open your workspace <ArrowRight aria-hidden="true" />
           </Link>
         </Button>
-      </div>
+      </section>
     </>
   );
 }

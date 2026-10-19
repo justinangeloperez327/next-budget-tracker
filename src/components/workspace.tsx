@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   BadgeDollarSign,
@@ -14,6 +15,7 @@ import {
   LayoutDashboard,
   LoaderCircle,
   LogOut,
+  Menu,
   PiggyBank,
   Receipt,
   Send,
@@ -22,6 +24,13 @@ import {
 import { ThemeControls } from "@/components/theme-controls";
 import { Brand } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useBudget } from "@/components/budget-provider";
 
 const navigation = [
@@ -78,8 +87,37 @@ function activeRoute(pathname: string, href: string) {
   return pathname === href;
 }
 
+function WorkspaceNavigation({
+  pathname,
+  onNavigate,
+}: {
+  pathname: string;
+  onNavigate?: () => void;
+}) {
+  return (
+    <nav
+      aria-label="Workspace navigation"
+      className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto py-3"
+    >
+      {navigation.map(([href, label, Icon]) => (
+        <Link
+          key={href}
+          href={href}
+          onClick={onNavigate}
+          aria-current={activeRoute(pathname, href) ? "page" : undefined}
+          className={`flex min-h-11 shrink-0 items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors ${activeRoute(pathname, href) ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"} ${["/budget", "/savings", "/reports"].includes(href) ? "mt-3" : ""}`}
+        >
+          <Icon className="size-4 shrink-0" aria-hidden="true" />
+          <span>{label}</span>
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
 export function Workspace({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
   const { ready, loaded, email, error, saveError, saving, logout } =
     useBudget();
   const section = sectionForPath(pathname);
@@ -98,7 +136,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
     error || saveError ? CircleAlert : saving ? LoaderCircle : CheckCircle2;
 
   return (
-    <div className="min-h-screen md:grid md:grid-cols-[232px_minmax(0,1fr)]">
+    <div className="min-h-screen md:grid md:grid-cols-[224px_minmax(0,1fr)]">
       <a
         href="#workspace-main"
         className="sr-only z-50 rounded-md bg-card px-4 py-2 text-sm font-medium shadow focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
@@ -106,35 +144,21 @@ export function Workspace({ children }: { children: React.ReactNode }) {
         Skip to content
       </a>
 
-      <aside className="border-b bg-card md:sticky md:top-0 md:flex md:h-screen md:flex-col md:overflow-hidden md:border-r md:border-b-0">
+      <aside className="hidden bg-card md:sticky md:top-0 md:flex md:h-screen md:flex-col md:overflow-hidden md:border-r">
         <div className="p-4 pb-3 md:p-5 md:pb-3">
           <Brand />
-          <p className="eyebrow mt-6 hidden md:block">Workspace</p>
+          <div className="mt-5 flex items-center gap-2 border-t pt-4">
+            <span className="currency-label">AED</span>
+            <span className="text-xs text-muted-foreground">
+              Everyday &amp; home
+            </span>
+            <span className="currency-label ml-auto">PHP</span>
+          </div>
         </div>
 
-        <nav
-          aria-label="Workspace navigation"
-          className="no-scrollbar flex gap-1 overflow-x-auto px-4 pb-4 md:min-h-0 md:flex-1 md:flex-col md:overflow-x-hidden md:overflow-y-auto md:px-3 md:pb-3"
-        >
-          {navigation.map(([href, label, Icon]) => {
-            const active = activeRoute(pathname, href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={`flex shrink-0 items-center gap-2 rounded-md px-3 py-2.5 text-sm transition-colors md:shrink ${
-                  active
-                    ? "bg-muted font-medium text-primary"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
-              >
-                <Icon className="size-4 shrink-0" aria-hidden="true" />
-                <span className="whitespace-nowrap">{label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        <div className="flex min-h-0 flex-1 flex-col px-3">
+          <WorkspaceNavigation pathname={pathname} />
+        </div>
 
         <div className="hidden border-t p-4 md:block">
           <div className="flex items-center gap-3">
@@ -166,8 +190,36 @@ export function Workspace({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-30 flex min-h-14 items-center justify-between gap-3 border-b bg-card/95 px-4 py-2 backdrop-blur sm:px-6 lg:px-8">
-          <div className="min-w-0">
+        <header className="sticky top-0 z-30 flex min-h-14 items-center justify-between gap-3 border-b bg-card px-4 py-2 sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-2">
+            <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-lg"
+                  className="size-11 md:hidden"
+                  aria-label="Open navigation"
+                >
+                  <Menu className="size-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="left-0 top-0 flex h-dvh max-h-dvh w-[min(320px,calc(100%-1.5rem))] max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-y-0 border-l-0 p-4 sm:max-w-sm">
+                <DialogTitle className="pr-10 text-left">
+                  Your workspace
+                </DialogTitle>
+                <DialogDescription className="mt-2 text-left">
+                  Plan, record, and review your finances.
+                </DialogDescription>
+                <WorkspaceNavigation
+                  pathname={pathname}
+                  onNavigate={() => setMenuOpen(false)}
+                />
+                <p className="truncate border-t pt-4 text-xs text-muted-foreground">
+                  {email || "Account"}
+                </p>
+              </DialogContent>
+            </Dialog>
             <p className="truncate text-xs text-muted-foreground">
               Workspace / {section}
             </p>
@@ -205,11 +257,12 @@ export function Workspace({ children }: { children: React.ReactNode }) {
 
         <main
           id="workspace-main"
-          className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10"
+          className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-8"
         >
           {error || saveError ? (
             <div
               role="alert"
+              aria-label="Workspace error"
               className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm"
             >
               <span>{error || saveError}</span>
