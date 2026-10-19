@@ -1,8 +1,23 @@
 "use client";
 
 import { ThemeProvider, useTheme } from "next-themes";
-import { useSyncExternalStore } from "react";
-import { Sun, Moon, Monitor } from "lucide-react";
+import { useId, useSyncExternalStore } from "react";
+import { Sun, Moon, Palette, Monitor } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
+  ThemeCompanion,
+  setCharacterTheme,
+  useCharacterTheme,
+} from "@/components/character-theme";
+import { characterThemes } from "@/lib/character-theme";
 
 const subscribe = () => () => {};
 export function AppearanceProvider({
@@ -24,6 +39,8 @@ export function AppearanceProvider({
 }
 export function ThemeControls() {
   const { theme, setTheme } = useTheme();
+  const character = useCharacterTheme();
+  const id = useId();
   const mounted = useSyncExternalStore(
     subscribe,
     () => true,
@@ -34,13 +51,10 @@ export function ThemeControls() {
       aria-label="Appearance"
       className="inline-flex shrink-0 gap-1 rounded-lg border bg-card p-1"
     >
-      {(
-        [
-          { value: "light", label: "Light", Icon: Sun },
-          { value: "dark", label: "Dark", Icon: Moon },
-          { value: "system", label: "System", Icon: Monitor },
-        ] as const
-      ).map(({ value, label, Icon }) => (
+      {[
+        { value: "light", label: "Light", Icon: Sun },
+        { value: "dark", label: "Dark", Icon: Moon },
+      ].map(({ value, label, Icon }) => (
         <button
           key={value}
           type="button"
@@ -54,6 +68,71 @@ export function ThemeControls() {
           <Icon className="size-4" aria-hidden="true" />
         </button>
       ))}
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-lg"
+            className="size-11"
+            aria-label="Choose character theme"
+            title="Choose character theme"
+          >
+            <Palette className="size-4" aria-hidden="true" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Choose your theme</DialogTitle>
+            <DialogDescription>
+              Pick a character style and your preferred appearance.
+            </DialogDescription>
+          </DialogHeader>
+          <fieldset>
+            <legend className="mb-3 text-sm font-medium">
+              Character theme
+            </legend>
+            <div className="grid grid-cols-3 gap-2">
+              {characterThemes.map((value) => (
+                <label
+                  key={value}
+                  className={`flex cursor-pointer flex-col items-center gap-2 rounded-lg border p-2 text-sm focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring ${character === value ? "border-primary bg-primary/10" : "hover:bg-muted"}`}
+                >
+                  <input
+                    className="size-4 accent-primary"
+                    type="radio"
+                    name={`${id}-character`}
+                    value={value}
+                    checked={character === value}
+                    onChange={() => setCharacterTheme(value)}
+                  />
+                  <ThemeCompanion
+                    theme={value}
+                    className="h-20 w-full max-w-20"
+                  />
+                  <span>
+                    {value === "sakura"
+                      ? "Sakura"
+                      : value === "kuromi"
+                        ? "Kuromi"
+                        : "Keroppi"}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <Button
+            type="button"
+            variant="outline"
+            aria-label="System appearance"
+            aria-pressed={mounted && theme === "system"}
+            onClick={() => setTheme("system")}
+          >
+            <Monitor className="size-4" aria-hidden="true" />
+            Use device appearance
+          </Button>
+        </DialogContent>
+      </Dialog>
     </fieldset>
   );
 }

@@ -19,6 +19,7 @@ import { savingsDashboardSnapshot } from "@/lib/savings";
 import { remittanceMonthSummary } from "@/lib/remittance";
 import { financialReminders, reminderSummary } from "@/lib/reminders";
 import { ExpenseEditor } from "@/components/expense-editor";
+import { ThemeCompanion } from "@/components/character-theme";
 import { SpendingTrend } from "@/components/spending-trend";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -149,7 +150,10 @@ export function Dashboard() {
             A clear view of your monthly spending.
           </p>
         </div>
-        <ExpenseEditor />
+        <div className="flex items-center gap-3">
+          <ThemeCompanion className="w-14" />
+          <ExpenseEditor />
+        </div>
       </div>
       <div className="my-6 flex items-center gap-3">
         <Label htmlFor="month">Month</Label>
@@ -172,7 +176,7 @@ export function Dashboard() {
           .map(({ label, value, description, color }, index) => (
             <div
               key={label}
-              className={`min-w-0 bg-card p-4 sm:p-6 ${index === 0 ? "col-span-2 sm:col-span-1" : ""}`}
+              className={`min-w-0 bg-card p-4 sm:p-6 ${index === 0 ? "notebook-note col-span-2 sm:col-span-1" : ""}`}
             >
               <p className="text-sm text-muted-foreground">{label}</p>
               <p

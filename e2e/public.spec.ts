@@ -69,3 +69,64 @@ test("appearance is keyboard accessible and survives reload", async ({
   await page.getByRole("button", { name: "Light appearance" }).click();
   await expect(page.locator("html")).not.toHaveClass(/dark/);
 });
+
+test("Sakura is the default and character themes persist across pages and appearances", async ({
+  page,
+}, testInfo) => {
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-character",
+    "sakura",
+  );
+  await expect(
+    page.getByText("Sakura notebook", { exact: true }),
+  ).toBeVisible();
+  for (const [value, label] of [
+    ["kuromi", "Kuromi"],
+    ["keroppi", "Keroppi"],
+    ["sakura", "Sakura"],
+  ]) {
+    await page.getByRole("button", { name: "Choose character theme" }).click();
+    const chooser = page.getByRole("dialog", { name: "Choose your theme" });
+    await chooser.getByRole("radio", { name: label, exact: true }).check();
+    await expect(page.locator("html")).toHaveAttribute("data-character", value);
+    await expect(
+      chooser.getByRole("radio", { name: label, exact: true }),
+    ).toBeChecked();
+    await chooser.getByRole("button", { name: "Close", exact: true }).click();
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("data-character", value);
+    await expect(
+      page.getByText(`${label} notebook`, { exact: true }),
+    ).toBeVisible();
+    for (const appearance of ["Dark", "Light"]) {
+      await page
+        .getByRole("button", { name: `${appearance} appearance` })
+        .click();
+      await expect(
+        page.getByRole("button", { name: `${appearance} appearance` }),
+      ).toHaveAttribute("aria-pressed", "true");
+      await expect(page.locator("html")).toHaveAttribute(
+        "data-character",
+        value,
+      );
+      await page.screenshot({
+        path: testInfo.outputPath(`${value}-${appearance.toLowerCase()}.png`),
+        fullPage: true,
+      });
+    }
+    await page.getByRole("button", { name: "Choose character theme" }).click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "System appearance" })
+      .click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Close", exact: true })
+      .click();
+    await page.goto("/login");
+    await expect(page.locator("html")).toHaveAttribute("data-character", value);
+    await expectNoOverflow(page);
+    await page.goto("/");
+  }
+});

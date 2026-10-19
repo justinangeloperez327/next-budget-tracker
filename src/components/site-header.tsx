@@ -3,12 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
-import {
-  ChartNoAxesCombined,
-  ArrowUpRight,
-  LogOut,
-  LayoutDashboard,
-} from "lucide-react";
+import { ArrowUpRight, LogOut, LayoutDashboard } from "lucide-react";
+import { ThemeMark } from "@/components/character-theme";
 import { ThemeControls } from "@/components/theme-controls";
 import { Button } from "@/components/ui/button";
 
@@ -24,7 +20,7 @@ export function Brand() {
       className="inline-flex items-center gap-2.5 font-medium tracking-tight"
     >
       <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-        <ChartNoAxesCombined size={17} aria-hidden="true" />
+        <ThemeMark />
       </span>
       Budget Tracker
     </Link>

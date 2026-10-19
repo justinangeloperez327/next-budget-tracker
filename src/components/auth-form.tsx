@@ -1,4 +1,5 @@
 "use client";
+import { ThemeCompanion, ThemeStamp } from "@/components/character-theme";
 import { Eye, EyeOff } from "lucide-react";
 import { useRef, useState } from "react";
 import Link from "next/link";
@@ -61,7 +62,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
   return (
     <section className="mx-auto grid max-w-4xl gap-8 py-10 sm:py-16 lg:grid-cols-[1fr_1.05fr] lg:items-start lg:gap-16">
       <aside className="hidden pt-8 lg:block">
-        <p className="eyebrow">Your monthly ledger</p>
+        <ThemeStamp />
         <h2 className="mt-4 max-w-sm text-3xl font-medium leading-tight sm:text-4xl">
           A little clarity.
           <br />
@@ -83,6 +84,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
       </aside>
       <Card>
         <CardHeader>
+          <ThemeCompanion className="mx-auto mb-3 w-20" />
           <h1 className="text-2xl font-medium">
             {register ? "Create your account" : "Welcome back"}
           </h1>

@@ -129,6 +129,8 @@ Playwright starts and stops its own production server on `127.0.0.1:3100`; it re
 
 ## UI
 
-The interface uses shadcn/ui-style components with cool neutral surfaces, restrained teal accents, compact corners, tabular financial values, and separate AED/PHP context. The dashboard leads with the monthly budget summary and spending graph; commitments link to their own trackers. Mobile navigation uses an accessible dialog, with focus trapping and Escape-to-close behavior. Light, Dark, and System appearance controls are provided through `next-themes`.
+Sakura is the default theme, with the original warm pink palette, notebook paper details, flower mark, and cat companion. Two additional character themes are available: Kuromi (purple, black, and pink) and Keroppi (green and mint), with matching decorative character artwork.
 
-The former floral decorations, animated hero, and hover-tilting cards have been removed. Browser reports and test data are never included in the product build.
+Use the palette button in the appearance controls to choose a character theme. Character choice is independent of Light, Dark, or System appearance, persists across reloads and sign-in, and syncs across open tabs. The saved palette is applied before paint. Browsers with blocked storage can still change the current tab's theme.
+
+The dashboard graph, mobile navigation, account-session fixes, and Playwright coverage remain in place. Character selection does not change financial data. Browser tests cover the default Sakura theme, all three character selections, persistence, and appearance combinations on desktop and mobile.
