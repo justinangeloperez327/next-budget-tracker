@@ -162,11 +162,11 @@ test("financial dashboard excludes future MP2 deposits from selected month", () 
 
   assert.equal(october.mp2.totalSaved, 100000);
   assert.equal(october.mp2.currentMonthSaved, 100000);
-  assert.equal(november.mp2.totalSaved, 100000);
-  assert.equal(november.mp2.currentMonthSaved, 0);
-  const atNovemberEnd = financialDashboardSnapshot(data, "2026-11", "2026-11-30");
-  assert.equal(atNovemberEnd.mp2.totalSaved, 200000);
-  assert.equal(atNovemberEnd.mp2.currentMonthSaved, 100000);
+  assert.equal(november.mp2.totalSaved, 200000);
+  assert.equal(november.mp2.currentMonthSaved, 100000);
+  const futureView = financialDashboardSnapshot(data, "2026-11", "2026-10-09");
+  assert.equal(futureView.mp2.totalSaved, 100000);
+  assert.equal(futureView.mp2.currentMonthSaved, 0);
 });
 
 test("financial dashboard surfaces overdue and contribution attention", () => {
