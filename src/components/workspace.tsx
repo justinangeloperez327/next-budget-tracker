@@ -118,13 +118,13 @@ function WorkspaceNavigation({
 export function Workspace({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const { ready, loaded, email, error, saveError, saving, logout } =
+  const { ready, loaded, email, error, saveError, reloadRequired, saving, logout } =
     useBudget();
   const section = sectionForPath(pathname);
   const saveLabel = error
-    ? loaded
-      ? "Save issue"
-      : "Workspace unavailable"
+    ? "Workspace unavailable"
+    : reloadRequired
+      ? "Reload required"
     : saveError
       ? "Action failed"
       : saving
@@ -266,7 +266,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
               className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm"
             >
               <span>{error || saveError}</span>
-              {error ? (
+              {error || reloadRequired ? (
                 <Button
                   type="button"
                   variant="outline"

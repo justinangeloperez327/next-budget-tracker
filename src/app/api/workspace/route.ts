@@ -219,7 +219,7 @@ export async function GET() {
       } as BudgetData),
     });
   } catch (error) {
-    return failure(error);
+    return failure(error, "workspace.load");
   }
 }
 
@@ -504,6 +504,6 @@ export async function PUT(request: Request) {
 
     return json({ revision: revision + 1 });
   } catch (error) {
-    return failure(error);
+    return failure(error, "workspace.save");
   }
 }

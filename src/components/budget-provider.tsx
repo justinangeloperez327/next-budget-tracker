@@ -2,11 +2,13 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { emptyData, validData, type BudgetData } from "@/lib/budget";
 import { validWorkspace } from "@/lib/workspace-validation";
+import { interpretSaveResponse } from "@/lib/save-response";
 type Context = {
   data: BudgetData;
   ready: boolean;
   loaded: boolean;
   saveError: string;
+  reloadRequired: boolean;
   email: string | null;
   error: string;
   saving: boolean;
@@ -19,6 +21,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [reloadRequired, setReloadRequired] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -32,9 +35,13 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
           cache: "no-store",
           signal: controller.signal,
         });
-        const result = await response.json();
+        const result = await response.json().catch(() => null);
         if (!response.ok)
-          throw Error(result.error || "Your workspace could not be loaded.");
+          throw Error(
+            typeof result?.error === "string"
+              ? result.error
+              : "Your workspace could not be loaded. Reload to try again.",
+          );
         if (controller.signal.aborted) return;
         if (
           typeof result.user?.email !== "string" ||
@@ -62,7 +69,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     return () => controller.abort();
   }, []);
   async function save(next: BudgetData) {
-    if (!loaded || error || busy.current) return false;
+    if (!loaded || error || reloadRequired || busy.current) return false;
     setSaveError("");
     if (!validWorkspace(next)) {
       setSaveError(
@@ -78,28 +85,23 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ data: next, revision: revision.current }),
       });
-      const result = await response.json();
-      if (!response.ok) {
-        const message =
-          result.error || "Changes could not be saved. Reload to try again.";
-        if ([400, 413, 415, 429].includes(response.status)) {
-          setSaveError(message);
-          return false;
-        }
-        throw Error(message);
+      const result: unknown = await response.json().catch(() => null);
+      const outcome = interpretSaveResponse(response.status, result, revision.current);
+      if (outcome.kind === "rejected") {
+        setSaveError(outcome.message);
+        setReloadRequired(outcome.reloadRequired);
+        return false;
       }
-      if (result.revision !== revision.current + 1)
-        throw Error(
-          "The save could not be confirmed. Reload before editing again.",
-        );
-      revision.current = result.revision;
+      revision.current = outcome.revision;
       setData(next);
+      setReloadRequired(false);
       return true;
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Changes could not be saved. Reload before trying again.",
+    } catch {
+      // The server may have committed even if the response was lost.
+      // Never increment the revision here: a subsequent retry will receive
+      // 409 if that earlier write succeeded, protecting newer data.
+      setSaveError(
+        "The save could not be confirmed. Retry the edit; if it already saved, you will be asked to reload instead of overwriting data.",
       );
       return false;
     } finally {
@@ -136,6 +138,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         email,
         error,
         saveError,
+        reloadRequired,
         saving,
         save,
         logout,

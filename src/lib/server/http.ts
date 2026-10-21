@@ -1,4 +1,6 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
+import { classifyUnexpectedFailure } from "@/lib/server/error-classification";
 export class HttpError extends Error {
   constructor(
     public status: number,
@@ -46,12 +48,15 @@ export async function readJson(
     throw new HttpError(400, "Invalid request data.");
   }
 }
-export function failure(error: unknown) {
+export function failure(error: unknown, operation = "unknown") {
   if (error instanceof HttpError)
     return Response.json(
       { error: error.message },
       { status: error.status, headers: { "Cache-Control": "no-store" } },
     );
+
+  const requestId = randomUUID();
+  const classification = classifyUnexpectedFailure(error);
   const details =
     error && typeof error === "object"
       ? {
@@ -60,16 +65,17 @@ export function failure(error: unknown) {
             "code" in error && typeof error.code === "string"
               ? error.code
               : undefined,
-          message:
-            error instanceof Error
-              ? error.message.split("\n", 1)[0]
-              : undefined,
         }
       : { name: "UnknownError" };
-  console.error("Budget API request failed", details);
+  // Correlate incidents without logging financial payloads or raw SQL/errors.
+  console.error("Budget API request failed", {
+    requestId,
+    operation,
+    ...details,
+  });
   return Response.json(
-    { error: "We couldn’t access your account data. Please try again shortly." },
-    { status: 503, headers: { "Cache-Control": "no-store" } },
+    { error: classification.message, code: classification.code, requestId },
+    { status: classification.status, headers: { "Cache-Control": "no-store" } },
   );
 }
 export function json(data: unknown) {

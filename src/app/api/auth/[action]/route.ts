@@ -74,6 +74,6 @@ export async function POST(
     await createSession(user.id);
     return json({ ok: true });
   } catch (error) {
-    return failure(error);
+    return failure(error, "auth.action");
   }
 }

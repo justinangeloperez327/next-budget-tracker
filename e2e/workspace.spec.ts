@@ -176,6 +176,66 @@ test("a concurrent save cannot overwrite newer records", async ({
   );
 });
 
+test("transient save failures can be retried without losing form data", async ({
+  page,
+  baseURL,
+}) => {
+  await createAccount(page, baseURL!);
+  await page.goto("/dashboard");
+  await expect(page.getByRole("heading", { name: "Monthly overview" })).toBeVisible();
+  let rejected = false;
+  await page.route("**/api/workspace", async (route) => {
+    if (route.request().method() === "PUT" && !rejected) {
+      rejected = true;
+      await route.fulfill({
+        status: 503,
+        json: { error: "Account service temporarily unavailable." },
+      });
+    } else {
+      await route.continue();
+    }
+  });
+  await page.getByLabel("Budget (AED)", { exact: true }).fill("1000");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("alert", { name: "Workspace error" })).toContainText(
+    "temporarily unavailable",
+  );
+  await expect(page.getByRole("button", { name: "Reload workspace" })).toHaveCount(0);
+  await expect(page.getByLabel("Budget (AED)", { exact: true })).toHaveValue("1000");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByText("Monthly budget saved.")).toBeVisible();
+  await expect(page.getByRole("alert", { name: "Workspace error" })).toHaveCount(0);
+  await page.unroute("**/api/workspace");
+  await page.reload();
+  await expect(page.getByLabel("Budget (AED)", { exact: true })).toHaveValue("1000");
+});
+
+test("unconfirmed response requires reload to prevent ambiguous overwrite", async ({
+  page,
+  baseURL,
+}) => {
+  await createAccount(page, baseURL!);
+  await page.goto("/dashboard");
+  await expect(page.getByRole("heading", { name: "Monthly overview" })).toBeVisible();
+  let putRequests = 0;
+  await page.route("**/api/workspace", async (route) => {
+    if (route.request().method() !== "PUT") return route.continue();
+    putRequests++;
+    await route.fulfill({ status: 200, json: { ok: true } });
+  });
+  await page.getByLabel("Budget (AED)", { exact: true }).fill("700");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("alert", { name: "Workspace error" })).toContainText(
+    "could not be confirmed",
+  );
+  await expect(page.getByRole("button", { name: "Reload workspace" })).toBeVisible();
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  expect(putRequests).toBe(1);
+  await page.unroute("**/api/workspace");
+  await page.getByRole("button", { name: "Reload workspace" }).click();
+  await expect(page.getByLabel("Budget (AED)", { exact: true })).toHaveValue("0");
+});
+
 test("load failures never show an empty financial dashboard", async ({
   page,
   baseURL,
