@@ -318,23 +318,7 @@ export async function PUT(request: Request) {
             amount: BigInt(data.budgets[month] ?? 0),
             userId: user.id,
           }));
-      const desired2 = allocations });
-
-      if (governmentAccounts.length)
-        await tx.governmentAccount.createMany({
-          data: governmentAccounts.map((account) => ({
-            id: account.id,
-            userId: user.id,
-            provider: account.provider,
-            memberType: account.memberType,
-            accountIdentifier: account.accountIdentifier ?? null,
-            monthlyTarget:
-              account.monthlyTarget === undefined
-                ? null
-                : BigInt(account.monthlyTarget),
-            frequency: account.frequency,
-            active: account.active,
-          }));
+      const desired2 = allocations;
       const desired3 = governmentAccounts.map((account) => ({
             id: account.id,
             userId: user.id,
