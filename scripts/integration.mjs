@@ -392,6 +392,125 @@ try {
   } finally {
     await client.end();
   }
+  // Group 24: real concurrent submissions must have one winner. The loser
+  // must not roll back the winner or create partial child/expense rows.
+  const raceRevision = 4;
+  const raceA = {
+    ...data,
+    budgets: { ...data.budgets, "2026-10": 410_000 },
+    expenses: [...data.expenses, {
+      id: randomUUID(),
+      description: "Concurrent writer A",
+      amount: 125,
+      category: "Food",
+      date: "2026-10-12",
+    }],
+  };
+  const raceB = {
+    ...data,
+    budgets: { ...data.budgets, "2026-10": 420_000 },
+    expenses: [...data.expenses, {
+      id: randomUUID(),
+      description: "Concurrent writer B",
+      amount: 225,
+      category: "Food",
+      date: "2026-10-12",
+    }],
+  };
+  const [raceResponseA, raceResponseB] = await Promise.all([
+    request("/api/workspace", {
+      method: "PUT", cookie, body: { data: raceA, revision: raceRevision },
+    }),
+    request("/api/workspace", {
+      method: "PUT", cookie, body: { data: raceB, revision: raceRevision },
+    }),
+  ]);
+  assert.deepEqual(
+    [raceResponseA.status, raceResponseB.status].sort((a, b) => a - b),
+    [200, 409],
+    "only one competing writer can commit",
+  );
+  const raceWinner = raceResponseA.status === 200 ? raceA : raceB;
+  const raceLoser = raceResponseA.status === 409 ? raceA : raceB;
+  const raced = await (await request("/api/workspace", { cookie })).json();
+  assert.equal(raced.revision, 5);
+  assert.deepEqual(raced.data, raceWinner);
+  assert.ok(!raced.data.expenses.some((entry) =>
+    entry.id === raceLoser.expenses.at(-1).id,
+  ), "the losing transaction creates no expense");
+  const staleRetry = await request("/api/workspace", {
+    method: "PUT", cookie, body: { data: raceLoser, revision: raceRevision },
+  });
+  assert.equal(staleRetry.status, 409);
+
+  // Hundreds of expenses: create, load, update, and delete while retaining
+  // linked payments/other financial records. Also verify the 600 kB API
+  // boundary rejects without incrementing revision or mutating rows.
+  const bulkExpenses = Array.from({ length: 350 }, (_, i) => ({
+    id: randomUUID(),
+    description: `Bulk regression expense ${String(i).padStart(3, "0")}`,
+    amount: 101 + (i % 97),
+    category: "Food",
+    date: "2026-10-11",
+  }));
+  const largeData = { ...data, expenses: [...data.expenses, ...bulkExpenses] };
+  const savedLarge = await request("/api/workspace", {
+    method: "PUT", cookie, body: { data: largeData, revision: 5 },
+  });
+  const savedLargeBody = await savedLarge.json();
+  assert.equal(savedLarge.status, 200, JSON.stringify(savedLargeBody));
+  assert.equal(savedLargeBody.revision, 6);
+  const largeRead = await (await request("/api/workspace", { cookie })).json();
+  assert.equal(largeRead.revision, 6);
+  assert.deepEqual(largeRead.data, largeData);
+  assert.equal(
+    largeRead.data.expenses.reduce((sum, entry) => sum + entry.amount, 0),
+    largeData.expenses.reduce((sum, entry) => sum + entry.amount, 0),
+  );
+
+  const truncatedData = {
+    ...largeData,
+    expenses: largeData.expenses
+      .filter((entry) => entry.id !== bulkExpenses[0].id)
+      .map((entry) => entry.id === bulkExpenses[1].id
+        ? { ...entry, amount: entry.amount + 50 }
+        : entry),
+  };
+  const changedLarge = await request("/api/workspace", {
+    method: "PUT", cookie, body: { data: truncatedData, revision: 6 },
+  });
+  const changedLargeBody = await changedLarge.json();
+  assert.equal(changedLarge.status, 200, JSON.stringify(changedLargeBody));
+  assert.equal(changedLargeBody.revision, 7);
+  assert.deepEqual(
+    (await (await request("/api/workspace", { cookie })).json()).data,
+    truncatedData,
+  );
+
+  const oversized = await request("/api/workspace", {
+    method: "PUT", cookie,
+    body: { data: truncatedData, revision: 7, padding: "x".repeat(620_000) },
+  });
+  assert.equal(oversized.status, 413, "oversized request is rejected");
+  assert.equal(
+    (await (await request("/api/workspace", { cookie })).json()).revision,
+    7,
+    "413 must not advance the optimistic revision",
+  );
+  assert.deepEqual(
+    (await (await request("/api/workspace", { cookie })).json()).data,
+    truncatedData,
+    "413 must not mutate financial records",
+  );
+
+  // Restore the original financial fixture for the subsequent auth tests.
+  const restoreFixture = await request("/api/workspace", {
+    method: "PUT", cookie, body: { data, revision: 7 },
+  });
+  const restoreFixtureBody = await restoreFixture.json();
+  assert.equal(restoreFixture.status, 200, JSON.stringify(restoreFixtureBody));
+  assert.equal(restoreFixtureBody.revision, 8);
+
   const second = await request("/api/auth/register", {
     method: "POST",
     body: { ...credentials, email: `second-${randomUUID()}@example.com` },
@@ -417,6 +536,28 @@ try {
       remittances: [],
     },
   );
+  // User B can use the same expense UUID as User A without changing A's
+  // composite-keyed record or replacing A's budget.
+  const isolated = {
+    expenses: [{ ...data.expenses[0], amount: data.expenses[0].amount + 123 }],
+    budgets: { "2026-10": 17_500 },
+  };
+  const isolatedSave = await request("/api/workspace", {
+    method: "PUT",
+    cookie: secondCookie,
+    body: { data: isolated, revision: 0 },
+  });
+  assert.equal(isolatedSave.status, 200, await isolatedSave.text());
+  const secondWorkspace = await (await request("/api/workspace", {
+    cookie: secondCookie,
+  })).json();
+  assert.equal(secondWorkspace.revision, 1);
+  assert.equal(secondWorkspace.data.expenses[0].amount, isolated.expenses[0].amount);
+  assert.equal(secondWorkspace.data.budgets["2026-10"], 17_500);
+  const firstWorkspace = await (await request("/api/workspace", { cookie })).json();
+  assert.equal(firstWorkspace.revision, 8);
+  assert.deepEqual(firstWorkspace.data, data);
+
   assert.equal(
     (
       await request("/api/auth/login", {
@@ -448,7 +589,7 @@ try {
       await request("/api/workspace", {
         method: "PUT",
         cookie: newCookie,
-        body: { data: { expenses: [], budgets: {} }, revision: 4 },
+        body: { data: { expenses: [], budgets: {} }, revision: 8 },
       })
     ).status,
     200,
