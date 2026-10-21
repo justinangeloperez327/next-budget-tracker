@@ -351,6 +351,47 @@ try {
     (await (await request("/api/workspace", { cookie })).json()).data,
     data,
   );
+  // PostgreSQL xmin changes when a row is UPDATEd or DELETEd/reinserted.
+  // Assert unchanged rows survive both no-op and single-record edits.
+  const { default: pg } = await import("pg");
+  const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+  await client.connect();
+  try {
+    const owner = (await client.query('SELECT id FROM "User" WHERE email = $1', [email])).rows[0].id;
+    const version = async (table, column, value) => {
+      assert.ok(["Expense", "Budget"].includes(table));
+      assert.ok(["id", "month"].includes(column));
+      const rows = await client.query(
+        `SELECT xmin::text AS version FROM "${table}" WHERE "userId" = $1 AND "${column}" = $2`,
+        [owner, value],
+      );
+      assert.equal(rows.rows.length, 1);
+      return rows.rows[0].version;
+    };
+    const expenseId = data.expenses[0].id;
+    const expenseBefore = await version("Expense", "id", expenseId);
+    const budgetBefore = await version("Budget", "month", "2026-10");
+    const noop = await request("/api/workspace", { method: "PUT", cookie, body: { data, revision: 1 } });
+    assert.equal(noop.status, 200);
+    assert.equal((await noop.json()).revision, 2);
+    assert.equal(await version("Expense", "id", expenseId), expenseBefore);
+    assert.equal(await version("Budget", "month", "2026-10"), budgetBefore);
+
+    const amended = { ...data, budgets: { ...data.budgets, "2026-10": 9_400_000_000 } };
+    const edit = await request("/api/workspace", { method: "PUT", cookie, body: { data: amended, revision: 2 } });
+    assert.equal(edit.status, 200);
+    assert.equal((await edit.json()).revision, 3);
+    assert.equal(await version("Expense", "id", expenseId), expenseBefore);
+    assert.notEqual(await version("Budget", "month", "2026-10"), budgetBefore);
+    assert.deepEqual((await (await request("/api/workspace", { cookie })).json()).data, amended);
+
+    const restored = await request("/api/workspace", { method: "PUT", cookie, body: { data, revision: 3 } });
+    assert.equal(restored.status, 200);
+    assert.equal((await restored.json()).revision, 4);
+    assert.equal(await version("Expense", "id", expenseId), expenseBefore);
+  } finally {
+    await client.end();
+  }
   const second = await request("/api/auth/register", {
     method: "POST",
     body: { ...credentials, email: `second-${randomUUID()}@example.com` },
@@ -407,7 +448,7 @@ try {
       await request("/api/workspace", {
         method: "PUT",
         cookie: newCookie,
-        body: { data: { expenses: [], budgets: {} }, revision: 1 },
+        body: { data: { expenses: [], budgets: {} }, revision: 4 },
       })
     ).status,
     200,

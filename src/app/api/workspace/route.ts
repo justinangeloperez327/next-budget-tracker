@@ -9,6 +9,7 @@ import {
 } from "@/lib/server/http";
 import { validWorkspace } from "@/lib/workspace-validation";
 import { normalizeManagedExpenseLinks } from "@/lib/workspace-normalization";
+import { reconcileRecords } from "@/lib/workspace-reconcile";
 import type { BudgetData } from "@/lib/budget";
 
 export const runtime = "nodejs";
@@ -268,26 +269,20 @@ export async function PUT(request: Request) {
           "Your workspace changed in another tab or device. Reload before editing again.",
         );
 
-      await tx.remittance.deleteMany({ where: { userId: user.id } });
-      await tx.savingsGoal.deleteMany({ where: { userId: user.id } });
-      await tx.debt.deleteMany({ where: { userId: user.id } });
-      await tx.recurringBill.deleteMany({ where: { userId: user.id } });
-      await tx.mp2Account.deleteMany({ where: { userId: user.id } });
-      await tx.governmentAccount.deleteMany({ where: { userId: user.id } });
-      await tx.expense.deleteMany({ where: { userId: user.id } });
-      await tx.budget.deleteMany({ where: { userId: user.id } });
-
-      if (data.expenses.length)
-        await tx.expense.createMany({
-          data: data.expenses.map((e) => ({
-            id: e.id,
-            description: e.description,
-            category: e.category,
-            date: e.date,
-            amount: BigInt(e.amount),
-            userId: user.id,
-          })),
-        });
+      // Load only the authenticated user's rows under the revision lock.
+      const snapshot = await tx.user.findUniqueOrThrow({
+        where: { id: user.id },
+        include: {
+          expenses: true,
+          budgets: { include: { allocations: true } },
+          governmentAccounts: { include: { contributions: true } },
+          mp2Accounts: { include: { deposits: true } },
+          recurringBills: { include: { payments: true } },
+          debts: { include: { payments: true } },
+          savingsGoals: { include: { deposits: true } },
+          remittances: true,
+        },
+      });
 
       const budgetMonths = [
         ...new Set([
@@ -295,15 +290,6 @@ export async function PUT(request: Request) {
           ...Object.keys(categoryBudgets),
         ]),
       ];
-      if (budgetMonths.length)
-        await tx.budget.createMany({
-          data: budgetMonths.map((month) => ({
-            month,
-            amount: BigInt(data.budgets[month] ?? 0),
-            userId: user.id,
-          })),
-        });
-
       const allocations = Object.entries(categoryBudgets).flatMap(
         ([month, categoryAmounts]) =>
           Object.entries(categoryAmounts).flatMap(([category, amount]) =>
@@ -319,8 +305,20 @@ export async function PUT(request: Request) {
                 ],
           ),
       );
-      if (allocations.length)
-        await tx.budgetAllocation.createMany({ data: allocations });
+      const desired0 = data.expenses.map((e) => ({
+            id: e.id,
+            description: e.description,
+            category: e.category,
+            date: e.date,
+            amount: BigInt(e.amount),
+            userId: user.id,
+          }));
+      const desired1 = budgetMonths.map((month) => ({
+            month,
+            amount: BigInt(data.budgets[month] ?? 0),
+            userId: user.id,
+          }));
+      const desired2 = allocations });
 
       if (governmentAccounts.length)
         await tx.governmentAccount.createMany({
@@ -336,12 +334,21 @@ export async function PUT(request: Request) {
                 : BigInt(account.monthlyTarget),
             frequency: account.frequency,
             active: account.active,
-          })),
-        });
-
-      if (governmentContributions.length)
-        await tx.governmentContribution.createMany({
-          data: governmentContributions.map((contribution) => ({
+          }));
+      const desired3 = governmentAccounts.map((account) => ({
+            id: account.id,
+            userId: user.id,
+            provider: account.provider,
+            memberType: account.memberType,
+            accountIdentifier: account.accountIdentifier ?? null,
+            monthlyTarget:
+              account.monthlyTarget === undefined
+                ? null
+                : BigInt(account.monthlyTarget),
+            frequency: account.frequency,
+            active: account.active,
+          }));
+      const desired4 = governmentContributions.map((contribution) => ({
             id: contribution.id,
             accountId: contribution.accountId,
             period: contribution.period,
@@ -350,12 +357,8 @@ export async function PUT(request: Request) {
             status: contribution.status,
             referenceNumber: contribution.referenceNumber ?? null,
             notes: contribution.notes ?? null,
-          })),
-        });
-
-      if (mp2Accounts.length)
-        await tx.mp2Account.createMany({
-          data: mp2Accounts.map((account) => ({
+          }));
+      const desired5 = mp2Accounts.map((account) => ({
             id: account.id,
             userId: user.id,
             name: account.name,
@@ -367,24 +370,16 @@ export async function PUT(request: Request) {
                 ? null
                 : BigInt(account.monthlyTarget),
             active: account.active,
-          })),
-        });
-
-      if (mp2Deposits.length)
-        await tx.mp2Deposit.createMany({
-          data: mp2Deposits.map((deposit) => ({
+          }));
+      const desired6 = mp2Deposits.map((deposit) => ({
             id: deposit.id,
             accountId: deposit.accountId,
             paymentDate: deposit.paymentDate,
             amount: BigInt(deposit.amount),
             referenceNumber: deposit.referenceNumber ?? null,
             notes: deposit.notes ?? null,
-          })),
-        });
-
-      if (recurringBills.length)
-        await tx.recurringBill.createMany({
-          data: recurringBills.map((bill) => ({
+          }));
+      const desired7 = recurringBills.map((bill) => ({
             id: bill.id,
             userId: user.id,
             name: bill.name,
@@ -396,12 +391,8 @@ export async function PUT(request: Request) {
             endMonth: bill.endMonth ?? null,
             active: bill.active,
             notes: bill.notes ?? null,
-          })),
-        });
-
-      if (billPayments.length)
-        await tx.billPayment.createMany({
-          data: billPayments.map((payment) => ({
+          }));
+      const desired8 = billPayments.map((payment) => ({
             id: payment.id,
             billId: payment.billId,
             period: payment.period,
@@ -410,12 +401,8 @@ export async function PUT(request: Request) {
             expenseId: payment.expenseId,
             referenceNumber: payment.referenceNumber ?? null,
             notes: payment.notes ?? null,
-          })),
-        });
-
-      if (debts.length)
-        await tx.debt.createMany({
-          data: debts.map((debt) => ({
+          }));
+      const desired9 = debts.map((debt) => ({
             id: debt.id,
             userId: user.id,
             name: debt.name,
@@ -430,12 +417,8 @@ export async function PUT(request: Request) {
                 : BigInt(debt.monthlyTarget),
             active: debt.active,
             notes: debt.notes ?? null,
-          })),
-        });
-
-      if (debtPayments.length)
-        await tx.debtPayment.createMany({
-          data: debtPayments.map((payment) => ({
+          }));
+      const desired10 = debtPayments.map((payment) => ({
             id: payment.id,
             debtId: payment.debtId,
             amount: BigInt(payment.amount),
@@ -443,12 +426,8 @@ export async function PUT(request: Request) {
             expenseId: payment.expenseId,
             referenceNumber: payment.referenceNumber ?? null,
             notes: payment.notes ?? null,
-          })),
-        });
-
-      if (savingsGoals.length)
-        await tx.savingsGoal.createMany({
-          data: savingsGoals.map((goal) => ({
+          }));
+      const desired11 = savingsGoals.map((goal) => ({
             id: goal.id,
             userId: user.id,
             name: goal.name,
@@ -462,24 +441,16 @@ export async function PUT(request: Request) {
             destination: goal.destination ?? null,
             active: goal.active,
             notes: goal.notes ?? null,
-          })),
-        });
-
-      if (savingsDeposits.length)
-        await tx.savingsDeposit.createMany({
-          data: savingsDeposits.map((deposit) => ({
+          }));
+      const desired12 = savingsDeposits.map((deposit) => ({
             id: deposit.id,
             goalId: deposit.goalId,
             amount: BigInt(deposit.amount),
             depositDate: deposit.depositDate,
             referenceNumber: deposit.referenceNumber ?? null,
             notes: deposit.notes ?? null,
-          })),
-        });
-
-      if (remittances.length)
-        await tx.remittance.createMany({
-          data: remittances.map((entry) => ({
+          }));
+      const desired13 = remittances.map((entry) => ({
             id: entry.id,
             userId: user.id,
             recipient: entry.recipient,
@@ -498,8 +469,177 @@ export async function PUT(request: Request) {
             expenseId: entry.expenseId ?? null,
             referenceNumber: entry.referenceNumber ?? null,
             notes: entry.notes ?? null,
-          })),
-        });
+          }));
+
+      // Parents first; deleted parents cascade to child records.
+      // Only retained parents contribute rows for child reconciliation.
+      await reconcileRecords(
+        snapshot.expenses,
+        desired0,
+        (row) => row.id,
+        (row) => row.id,
+        {
+          remove: (keys) => tx.expense.deleteMany({ where: { userId: user.id, id: { in: keys } } }),
+          insert: (rows) => tx.expense.createMany({ data: rows }),
+          update: (record) => { const { id, ...changes } = record; return tx.expense.update({ where: { userId_id: { userId: user.id, id } }, data: changes }); },
+        },
+      );
+
+      await reconcileRecords(
+        snapshot.budgets,
+        desired1,
+        (row) => row.month,
+        (row) => row.month,
+        {
+          remove: (keys) => tx.budget.deleteMany({ where: { userId: user.id, month: { in: keys } } }),
+          insert: (rows) => tx.budget.createMany({ data: rows }),
+          update: (record) => tx.budget.update({ where: { userId_month: { userId: user.id, month: record.month } }, data: { amount: record.amount } }),
+        },
+      );
+
+      await reconcileRecords(
+        snapshot.budgets.filter((parent) => desired1.some((row) => row.month === parent.month)).flatMap((parent) => parent.allocations),
+        desired2,
+        (row) => row.month + "|" + row.category,
+        (row) => row.month + "|" + row.category,
+        {
+          remove: (keys) => tx.budgetAllocation.deleteMany({ where: { userId: user.id, OR: keys.map((key) => { const [month, category] = key.split("|"); return { month, category }; }) } }),
+          insert: (rows) => tx.budgetAllocation.createMany({ data: rows }),
+          update: (record) => tx.budgetAllocation.update({ where: { userId_month_category: { userId: user.id, month: record.month, category: record.category } }, data: { amount: record.amount } }),
+        },
+      );
+
+      await reconcileRecords(
+        snapshot.governmentAccounts,
+        desired3,
+        (row) => row.id,
+        (row) => row.id,
+        {
+          remove: (keys) => tx.governmentAccount.deleteMany({ where: { userId: user.id, id: { in: keys } } }),
+          insert: (rows) => tx.governmentAccount.createMany({ data: rows }),
+          update: (record) => { const { id, ...changes } = record; return tx.governmentAccount.update({ where: { id, userId: user.id }, data: changes }); },
+        },
+      );
+
+      await reconcileRecords(
+        snapshot.governmentAccounts.filter((parent) => desired3.some((row) => row.id === parent.id)).flatMap((parent) => parent.contributions),
+        desired4,
+        (row) => row.id,
+        (row) => row.id,
+        {
+          remove: (keys) => tx.governmentContribution.deleteMany({ where: { id: { in: keys }, account: { is: { userId: user.id } } } }),
+          insert: (rows) => tx.governmentContribution.createMany({ data: rows }),
+          update: (record) => { const { id, ...changes } = record; return tx.governmentContribution.update({ where: { id, account: { is: { userId: user.id } } }, data: changes }); },
+        },
+      );
+
+      await reconcileRecords(
+        snapshot.mp2Accounts,
+        desired5,
+        (row) => row.id,
+        (row) => row.id,
+        {
+          remove: (keys) => tx.mp2Account.deleteMany({ where: { userId: user.id, id: { in: keys } } }),
+          insert: (rows) => tx.mp2Account.createMany({ data: rows }),
+          update: (record) => { const { id, ...changes } = record; return tx.mp2Account.update({ where: { id, userId: user.id }, data: changes }); },
+        },
+      );
+
+      await reconcileRecords(
+        snapshot.mp2Accounts.filter((parent) => desired5.some((row) => row.id === parent.id)).flatMap((parent) => parent.deposits),
+        desired6,
+        (row) => row.id,
+        (row) => row.id,
+        {
+          remove: (keys) => tx.mp2Deposit.deleteMany({ where: { id: { in: keys }, account: { is: { userId: user.id } } } }),
+          insert: (rows) => tx.mp2Deposit.createMany({ data: rows }),
+          update: (record) => { const { id, ...changes } = record; return tx.mp2Deposit.update({ where: { id, account: { is: { userId: user.id } } }, data: changes }); },
+        },
+      );
+
+      await reconcileRecords(
+        snapshot.recurringBills,
+        desired7,
+        (row) => row.id,
+        (row) => row.id,
+        {
+          remove: (keys) => tx.recurringBill.deleteMany({ where: { userId: user.id, id: { in: keys } } }),
+          insert: (rows) => tx.recurringBill.createMany({ data: rows }),
+          update: (record) => { const { id, ...changes } = record; return tx.recurringBill.update({ where: { id, userId: user.id }, data: changes }); },
+        },
+      );
+
+      await reconcileRecords(
+        snapshot.recurringBills.filter((parent) => desired7.some((row) => row.id === parent.id)).flatMap((parent) => parent.payments),
+        desired8,
+        (row) => row.id,
+        (row) => row.id,
+        {
+          remove: (keys) => tx.billPayment.deleteMany({ where: { id: { in: keys }, bill: { is: { userId: user.id } } } }),
+          insert: (rows) => tx.billPayment.createMany({ data: rows }),
+          update: (record) => { const { id, ...changes } = record; return tx.billPayment.update({ where: { id, bill: { is: { userId: user.id } } }, data: changes }); },
+        },
+      );
+
+      await reconcileRecords(
+        snapshot.debts,
+        desired9,
+        (row) => row.id,
+        (row) => row.id,
+        {
+          remove: (keys) => tx.debt.deleteMany({ where: { userId: user.id, id: { in: keys } } }),
+          insert: (rows) => tx.debt.createMany({ data: rows }),
+          update: (record) => { const { id, ...changes } = record; return tx.debt.update({ where: { id, userId: user.id }, data: changes }); },
+        },
+      );
+
+      await reconcileRecords(
+        snapshot.debts.filter((parent) => desired9.some((row) => row.id === parent.id)).flatMap((parent) => parent.payments),
+        desired10,
+        (row) => row.id,
+        (row) => row.id,
+        {
+          remove: (keys) => tx.debtPayment.deleteMany({ where: { id: { in: keys }, debt: { is: { userId: user.id } } } }),
+          insert: (rows) => tx.debtPayment.createMany({ data: rows }),
+          update: (record) => { const { id, ...changes } = record; return tx.debtPayment.update({ where: { id, debt: { is: { userId: user.id } } }, data: changes }); },
+        },
+      );
+
+      await reconcileRecords(
+        snapshot.savingsGoals,
+        desired11,
+        (row) => row.id,
+        (row) => row.id,
+        {
+          remove: (keys) => tx.savingsGoal.deleteMany({ where: { userId: user.id, id: { in: keys } } }),
+          insert: (rows) => tx.savingsGoal.createMany({ data: rows }),
+          update: (record) => { const { id, ...changes } = record; return tx.savingsGoal.update({ where: { id, userId: user.id }, data: changes }); },
+        },
+      );
+
+      await reconcileRecords(
+        snapshot.savingsGoals.filter((parent) => desired11.some((row) => row.id === parent.id)).flatMap((parent) => parent.deposits),
+        desired12,
+        (row) => row.id,
+        (row) => row.id,
+        {
+          remove: (keys) => tx.savingsDeposit.deleteMany({ where: { id: { in: keys }, goal: { is: { userId: user.id } } } }),
+          insert: (rows) => tx.savingsDeposit.createMany({ data: rows }),
+          update: (record) => { const { id, ...changes } = record; return tx.savingsDeposit.update({ where: { id, goal: { is: { userId: user.id } } }, data: changes }); },
+        },
+      );
+
+      await reconcileRecords(
+        snapshot.remittances,
+        desired13,
+        (row) => row.id,
+        (row) => row.id,
+        {
+          remove: (keys) => tx.remittance.deleteMany({ where: { userId: user.id, id: { in: keys } } }),
+          insert: (rows) => tx.remittance.createMany({ data: rows }),
+          update: (record) => { const { id, ...changes } = record; return tx.remittance.update({ where: { id, userId: user.id }, data: changes }); },
+        },
+      );
     }, { maxWait: 10000, timeout: 30000 });
 
     return json({ revision: revision + 1 });
