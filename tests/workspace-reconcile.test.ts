@@ -3,16 +3,16 @@ import assert from "node:assert/strict";
 import { planRecordChanges, reconcileRecords } from "../src/lib/workspace-reconcile.ts";
 
 test("unchanged persisted scalars never generate updates", () => {
-  const existing = [{ id: "a", userId: "owner", amount: 12n, createdAt: new Date() }];
-  const desired = [{ id: "a", userId: "owner", amount: 12n }];
+  const existing = [{ id: "a", userId: "owner", amount: BigInt(12), createdAt: new Date() }];
+  const desired = [{ id: "a", userId: "owner", amount: BigInt(12) }];
   assert.deepEqual(planRecordChanges(existing, desired, (r) => r.id, (r) => r.id), {
     remove: [], insert: [], update: [],
   });
 });
 
 test("deletes, additions, and modified values are isolated", () => {
-  const current = [{ id: "a", amount: 12n }, { id: "b", amount: 20n }, { id: "old", amount: 50n }];
-  const next = [{ id: "a", amount: 12n }, { id: "b", amount: 21n }, { id: "new", amount: 4n }];
+  const current = [{ id: "a", amount: BigInt(12) }, { id: "b", amount: BigInt(20) }, { id: "old", amount: BigInt(50) }];
+  const next = [{ id: "a", amount: BigInt(12) }, { id: "b", amount: BigInt(21) }, { id: "new", amount: BigInt(4) }];
   assert.deepEqual(planRecordChanges(current, next, (r) => r.id, (r) => r.id), {
     remove: ["old"], insert: [next[2]], update: [next[1]],
   });
@@ -20,8 +20,8 @@ test("deletes, additions, and modified values are isolated", () => {
 
 test("compound allocation keys distinguish categories", () => {
   const key = (r: { month: string; category: string }) => r.month + "|" + r.category;
-  const before = [{ month: "2026-10", category: "Food", amount: 100n }];
-  const after = [{ month: "2026-10", category: "Housing", amount: 100n }, before[0]];
+  const before = [{ month: "2026-10", category: "Food", amount: BigInt(100) }];
+  const after = [{ month: "2026-10", category: "Housing", amount: BigInt(100) }, before[0]];
   assert.deepEqual(planRecordChanges(before, after, key, key), {
     remove: [], insert: [after[0]], update: [],
   });
