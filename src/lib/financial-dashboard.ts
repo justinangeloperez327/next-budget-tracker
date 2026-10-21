@@ -9,6 +9,7 @@ import {
   governmentProviders,
 } from "./government.ts";
 import { mp2AccountSnapshot } from "./mp2.ts";
+import { reportingCutoff, recordedInMonth } from "./reporting-period.ts";
 
 export type FinancialAttentionItem = {
   id: string;
@@ -18,45 +19,38 @@ export type FinancialAttentionItem = {
   severity: "attention" | "info";
 };
 
-function monthEndDate(month: string) {
-  const [year, monthNumber] = month.split("-").map(Number);
-  const day = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
-  return `${month}-${String(day).padStart(2, "0")}`;
-}
-
 export function financialDashboardSnapshot(
   data: BudgetData,
   month: string,
   today: string,
 ) {
-  const asOfDate = month === today.slice(0, 7) ? today : monthEndDate(month);
-
-  const selectedMonthEnd = monthEndDate(month);
-  const budget = monthlyBudgetReport(data, month);
+  const asOfDate = reportingCutoff(month, today);
+  const budget = monthlyBudgetReport(data, month, asOfDate);
   const bills = billDashboardSnapshot(
     data.recurringBills ?? [],
     (data.billPayments ?? []).filter(
-      (payment) => payment.paymentDate <= selectedMonthEnd,
+      (payment) => payment.paymentDate <= asOfDate,
     ),
     asOfDate,
+    month,
   );
   const debts = debtDashboardSnapshot(
-    (data.debts ?? []).filter((debt) => debt.startDate <= selectedMonthEnd),
+    (data.debts ?? []).filter((debt) => debt.startDate <= asOfDate),
     (data.debtPayments ?? []).filter(
-      (payment) => payment.paymentDate <= selectedMonthEnd,
+      (payment) => payment.paymentDate <= asOfDate,
     ),
     asOfDate,
   );
   const savings = savingsDashboardSnapshot(
     (data.savingsGoals ?? []).filter(
-      (goal) => goal.startDate <= selectedMonthEnd,
+      (goal) => goal.startDate <= asOfDate,
     ),
     (data.savingsDeposits ?? []).filter(
-      (deposit) => deposit.depositDate <= selectedMonthEnd,
+      (deposit) => deposit.depositDate <= asOfDate,
     ),
     asOfDate,
   );
-  const remittances = remittanceMonthSummary(data.remittances ?? [], month);
+  const remittances = remittanceMonthSummary(data.remittances ?? [], month, asOfDate);
 
   const contributions = governmentProviders.map((provider) => {
     const account = (data.governmentAccounts ?? []).find(
@@ -87,7 +81,7 @@ export function financialDashboardSnapshot(
     mp2AccountSnapshot(
       account,
       (data.mp2Deposits ?? []).filter(
-        (deposit) => deposit.paymentDate <= selectedMonthEnd,
+        (deposit) => deposit.paymentDate <= asOfDate,
       ),
       asOfDate,
     ),
@@ -104,11 +98,11 @@ export function financialDashboardSnapshot(
       .filter(
         (deposit) =>
           deposit.paymentDate.startsWith(selectedYear) &&
-          deposit.paymentDate <= selectedMonthEnd,
+          deposit.paymentDate <= asOfDate,
       )
       .reduce((sum, deposit) => sum + deposit.amount, 0),
     currentMonthSaved: (data.mp2Deposits ?? [])
-      .filter((deposit) => deposit.paymentDate.startsWith(month))
+      .filter((deposit) => recordedInMonth(deposit.paymentDate, month, asOfDate))
       .reduce((sum, deposit) => sum + deposit.amount, 0),
     maturedCount: mp2Snapshots.filter(
       (snapshot) => snapshot.maturityStatus === "Matured",
@@ -182,10 +176,11 @@ export function financialDashboardSnapshot(
       overdueDebts: debts.overdueCount,
       savingsSaved: savings.totalSaved,
       savingsRemaining: savings.totalRemaining,
-      remitted: remittances.sentAmount,
+      remitted: remittances.completedSentAmount,
+      pendingRemittances: remittances.pendingSentAmount,
       remittanceFees: remittances.feeAmount,
-      remittanceSupport: remittances.supportAmount,
-      ownAccountTransfers: remittances.ownTransferAmount,
+      remittanceSupport: remittances.completedSupportAmount,
+      ownAccountTransfers: remittances.completedOwnTransferAmount,
     },
     php: {
       governmentYtdPaid,

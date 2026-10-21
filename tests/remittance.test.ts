@@ -178,3 +178,24 @@ test("own-account remittance links only its fee expense", () => {
     true,
   );
 });
+
+test("pending transfers remain visible in the ledger but not completed financial totals", () => {
+  const pending: Remittance = {
+    ...family, id: "pending-entry", status: "Pending",
+    receivedAmount: undefined, sentAmount: 45000,
+    feeAmount: 300, transferDate: "2026-10-09",
+  };
+  const result = remittanceMonthSummary([family, ownAccount, pending], "2026-10", "2026-10-09");
+  assert.equal(result.sentAmount, 345000);
+  assert.equal(result.completedSentAmount, 300000);
+  assert.equal(result.pendingSentAmount, 45000);
+  assert.equal(result.completedSupportAmount, 100000);
+  assert.equal(result.completedOwnTransferAmount, 200000);
+  assert.equal(result.receivedAmount, 4650000);
+  assert.equal(result.pendingCount, 1);
+  assert.equal(result.feeAmount, 2800);
+  const earlier = remittanceMonthSummary([family, ownAccount, pending], "2026-10", "2026-10-08");
+  assert.equal(earlier.sentAmount, family.sentAmount);
+  assert.equal(earlier.completedSentAmount, family.sentAmount);
+  assert.equal(earlier.pendingCount, 0);
+});

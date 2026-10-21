@@ -127,7 +127,8 @@ export function FilipinoFinancialDashboard() {
           <CardContent className="space-y-4">
             {[
               ["Bills still due", money(snapshot.aed.billsOutstanding)],
-              ["Remitted this month", money(snapshot.aed.remitted)],
+              ["Completed remittances", money(snapshot.aed.remitted)],
+              ["Pending remittances", money(snapshot.aed.pendingRemittances)],
               ["Remittance fees", money(snapshot.aed.remittanceFees)],
               ["Family / support remittance", money(snapshot.aed.remittanceSupport)],
               ["Own-account transfers", money(snapshot.aed.ownAccountTransfers)],

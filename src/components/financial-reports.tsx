@@ -205,7 +205,7 @@ export function FinancialReports() {
                 {monthly.budget.variance < 0
                   ? "Overspent"
                   : monthly.budget.variance > 0
-                    ? "Saved against budget"
+                    ? "Under budget (not savings)"
                     : "On budget"}
               </p>
             </CardContent>
@@ -239,7 +239,8 @@ export function FinancialReports() {
               {[
                 ["Bills paid", money(monthly.aed.billsPaid)],
                 ["Debt repaid", money(monthly.aed.debtRepaid)],
-                ["Remitted", money(monthly.aed.remitted)],
+                ["Completed remittances", money(monthly.aed.remitted)],
+                ["Pending remittances", money(monthly.aed.pendingRemittances)],
                 ["Remittance fees", money(monthly.aed.remittanceFees)],
                 ["Family / support remittance", money(monthly.aed.remittanceSupport)],
                 ["Own-account transfers", money(monthly.aed.ownAccountTransfers)],
@@ -327,7 +328,7 @@ export function FinancialReports() {
                         </TableCell>
                         <TableCell>
                           {entry.status === "saved"
-                            ? "Saved"
+                            ? "Under budget"
                             : entry.status === "overspent"
                               ? "Overspent"
                               : "On budget"}
@@ -426,7 +427,8 @@ export function FinancialReports() {
               {[
                 ["Bills paid", money(yearly.aed.billsPaid)],
                 ["Debt repaid", money(yearly.aed.debtRepaid)],
-                ["Remitted", money(yearly.aed.remitted)],
+                ["Completed remittances", money(yearly.aed.remitted)],
+                ["Pending remittances", money(yearly.aed.pendingRemittances)],
                 ["Remittance fees", money(yearly.aed.remittanceFees)],
                 ["Support remitted", money(yearly.aed.supportRemitted)],
                 ["Own-account transfers", money(yearly.aed.ownAccountTransfers)],
@@ -500,7 +502,7 @@ export function FinancialReports() {
                     <TableHead className="text-right">Budget AED</TableHead>
                     <TableHead className="text-right">Spent AED</TableHead>
                     <TableHead className="text-right">Variance AED</TableHead>
-                    <TableHead className="text-right">Remitted AED</TableHead>
+                    <TableHead className="text-right">Completed remittances AED</TableHead>
                     <TableHead className="text-right">PHP received</TableHead>
                   </TableRow>
                 </TableHeader>

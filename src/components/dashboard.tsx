@@ -13,11 +13,8 @@ import {
 import { useState } from "react";
 import { useBudget } from "@/components/budget-provider";
 import { categories, money, total } from "@/lib/budget";
-import { billOccurrencesForPeriod } from "@/lib/bills";
-import { debtDashboardSnapshot } from "@/lib/debt";
-import { savingsDashboardSnapshot } from "@/lib/savings";
-import { remittanceMonthSummary } from "@/lib/remittance";
 import { financialReminders, reminderSummary } from "@/lib/reminders";
+import { financialDashboardSnapshot } from "@/lib/financial-dashboard";
 import { ExpenseEditor } from "@/components/expense-editor";
 import { ThemeCompanion } from "@/components/character-theme";
 import { SpendingTrend } from "@/components/spending-trend";
@@ -30,34 +27,17 @@ export function Dashboard() {
   const [month, setMonth] = useState(
     new Date().toLocaleDateString("en-CA").slice(0, 7),
   );
-  const expenses = data.expenses.filter((e) => e.date.startsWith(month));
   const today = new Date().toLocaleDateString("en-CA");
-  const billOccurrences = billOccurrencesForPeriod(
-    data.recurringBills ?? [],
-    data.billPayments ?? [],
-    month,
-    today,
+  const financial = financialDashboardSnapshot(data, month, today);
+  const expenses = data.expenses.filter(
+    (entry) => entry.date.startsWith(month) && entry.date <= financial.asOfDate,
   );
-  const billsOutstanding = billOccurrences
-    .filter((entry) => !entry.payment)
-    .reduce((sum, entry) => sum + entry.bill.amount, 0);
-  const overdueBills = billOccurrences.filter(
-    (entry) => entry.status === "Overdue",
-  ).length;
-  const debtSummary = debtDashboardSnapshot(
-    data.debts ?? [],
-    data.debtPayments ?? [],
-    today,
-  );
-  const savingsSummary = savingsDashboardSnapshot(
-    data.savingsGoals ?? [],
-    data.savingsDeposits ?? [],
-    today,
-  );
-  const remittanceSummary = remittanceMonthSummary(
-    data.remittances ?? [],
-    month,
-  );
+  const billOccurrences = financial.bills.occurrences;
+  const billsOutstanding = financial.bills.outstanding;
+  const overdueBills = financial.bills.overdue;
+  const debtSummary = financial.debts;
+  const savingsSummary = financial.savings;
+  const remittanceSummary = financial.remittances;
   const reminders = financialReminders(data, today);
   const remindersSummary = reminderSummary(reminders);
   const spent = total(expenses),
@@ -119,15 +99,15 @@ export function Dashboard() {
         : `${savingsSummary.activeCount} active · ${savingsSummary.completedCount} completed`,
     },
     {
-      label: "Remitted this month",
-      value: money(remittanceSummary.sentAmount),
+      label: "Completed remittances",
+      value: money(remittanceSummary.completedSentAmount),
       icon: Send,
       color: remittanceSummary.pendingCount
         ? "var(--muted-foreground)"
         : "var(--primary)",
       description: remittanceSummary.pendingCount
-        ? `${remittanceSummary.pendingCount} transfer${remittanceSummary.pendingCount === 1 ? "" : "s"} pending · ${money(remittanceSummary.feeAmount)} fees`
-        : `${remittanceSummary.count} transfer${remittanceSummary.count === 1 ? "" : "s"} · ${money(remittanceSummary.feeAmount)} fees`,
+        ? `${money(remittanceSummary.pendingSentAmount)} pending · ${money(remittanceSummary.feeAmount)} recorded fees`
+        : `${remittanceSummary.completedCount} completed · ${money(remittanceSummary.feeAmount)} recorded fees`,
     },
     {
       label: "Reminders",
@@ -234,7 +214,7 @@ export function Dashboard() {
       </div>
       <SpendingTrend
         key={month}
-        expenses={data.expenses}
+        expenses={expenses}
         month={month}
         budget={budget}
       />

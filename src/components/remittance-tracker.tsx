@@ -205,7 +205,7 @@ export function RemittanceTracker() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Sent this month
+              Transfers recorded (including pending)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -213,7 +213,7 @@ export function RemittanceTracker() {
               {money(summary.sentAmount)}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {summary.count} transfer{summary.count === 1 ? "" : "s"}
+              {money(summary.completedSentAmount)} completed · {money(summary.pendingSentAmount)} pending
             </p>
           </CardContent>
         </Card>

@@ -74,7 +74,7 @@ export function HistoricalBudgetAnalysisView() {
             Budget performance over time
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Compare monthly budgets, spending, savings rates, and category
+            Compare monthly budgets, spending, unspent-budget rates, and category
             performance across your recorded history.
           </p>
           <Link
@@ -157,12 +157,12 @@ export function HistoricalBudgetAnalysisView() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Average savings rate
+              Average unspent-budget rate
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-medium tabular-nums">
-              {percent(analysis.averageSavingsRate)}
+              {percent(analysis.averageUnderBudgetRate)}
             </p>
           </CardContent>
         </Card>
@@ -175,9 +175,9 @@ export function HistoricalBudgetAnalysisView() {
           <CardContent>
             <p className="text-sm">
               <span className="font-medium tabular-nums">
-                {analysis.savedMonths}
+                {analysis.underBudgetMonths}
               </span>{" "}
-              saved ·{" "}
+              under budget ·{" "}
               <span
                 className={
                   analysis.overspentMonths > 0
@@ -300,7 +300,7 @@ export function HistoricalBudgetAnalysisView() {
               <p className="mt-1 text-sm tabular-nums text-muted-foreground">
                 {mostSaved
                   ? money(mostSaved.variance)
-                  : "No category savings recorded"}
+                  : "No unspent category budget"}
               </p>
             </div>
           </CardContent>
@@ -309,13 +309,13 @@ export function HistoricalBudgetAnalysisView() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base font-medium">
-              Savings and overspending
+              Under-budget variance and overspending
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div>
               <p className="text-sm text-muted-foreground">
-                Gross monthly savings
+                Gross unspent budget
               </p>
               <p className="mt-1 text-xl font-medium tabular-nums">
                 {money(analysis.totalSaved)}
@@ -350,7 +350,7 @@ export function HistoricalBudgetAnalysisView() {
                   <TableHead className="text-right">Budget</TableHead>
                   <TableHead className="text-right">Actual</TableHead>
                   <TableHead className="text-right">Variance</TableHead>
-                  <TableHead className="text-right">Savings rate</TableHead>
+                  <TableHead className="text-right">Unspent budget rate</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -375,7 +375,7 @@ export function HistoricalBudgetAnalysisView() {
                         {money(Math.abs(report.variance))}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {report.budget > 0 ? percent(report.savingsRate) : "—"}
+                        {report.budget > 0 ? percent(report.underBudgetRate) : "—"}
                       </TableCell>
                     </TableRow>
                   ))

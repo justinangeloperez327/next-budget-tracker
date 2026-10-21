@@ -93,11 +93,14 @@ export function validRemittanceData(value: unknown) {
 export function remittanceMonthSummary(
   remittances: Remittance[],
   month: string,
+  asOfDate?: string,
 ) {
-  const entries = remittances.filter((entry) =>
-    entry.transferDate.startsWith(month),
+  const entries = remittances.filter(
+    (entry) => entry.transferDate.startsWith(month) &&
+      (!asOfDate || entry.transferDate <= asOfDate),
   );
   const completed = entries.filter((entry) => entry.status === "Completed");
+  const pending = entries.filter((entry) => entry.status === "Pending");
   const sentAmount = entries.reduce((sum, entry) => sum + entry.sentAmount, 0);
   const feeAmount = entries.reduce((sum, entry) => sum + entry.feeAmount, 0);
   const receivedAmount = completed.reduce(
@@ -115,8 +118,16 @@ export function remittanceMonthSummary(
     completedCount: completed.length,
     pendingCount: entries.length - completed.length,
     sentAmount,
+    completedSentAmount,
+    pendingSentAmount: pending.reduce((sum, entry) => sum + entry.sentAmount, 0),
     feeAmount,
     receivedAmount,
+    completedSupportAmount: completed
+      .filter((entry) => entry.principalAsExpense)
+      .reduce((sum, entry) => sum + entry.sentAmount, 0),
+    completedOwnTransferAmount: completed
+      .filter((entry) => !entry.principalAsExpense)
+      .reduce((sum, entry) => sum + entry.sentAmount, 0),
     supportAmount: entries
       .filter((entry) => entry.principalAsExpense)
       .reduce((sum, entry) => sum + entry.sentAmount, 0),

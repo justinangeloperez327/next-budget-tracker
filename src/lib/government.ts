@@ -343,7 +343,11 @@ export function contributionDashboardSnapshot(
     (period) => period <= currentPeriod,
   );
   const paidExpected = dueExpected.filter(
-    (period) => contributionByPeriod.get(period)?.status === "Paid",
+    (period) => {
+      const contribution = contributionByPeriod.get(period);
+      return contribution?.status === "Paid" &&
+        (!contribution.paymentDate || contribution.paymentDate <= asOfDate);
+    },
   );
   const gapPeriods = expectedPeriods.filter(
     (period) => period < currentPeriod && !contributionByPeriod.has(period),
@@ -357,7 +361,8 @@ export function contributionDashboardSnapshot(
   const lastPayment = accountContributions
     .filter(
       (contribution) =>
-        contribution.status === "Paid" && !!contribution.paymentDate,
+        contribution.status === "Paid" && !!contribution.paymentDate &&
+        contribution.paymentDate <= asOfDate,
     )
     .toSorted(
       (a, b) =>
@@ -386,7 +391,8 @@ export function contributionDashboardSnapshot(
         (contribution) =>
           contribution.status === "Paid" &&
           contribution.period.startsWith(String(year)) &&
-          contribution.period <= currentPeriod,
+          contribution.period <= currentPeriod &&
+          (!contribution.paymentDate || contribution.paymentDate <= asOfDate),
       )
       .reduce((sum, contribution) => sum + contribution.amount, 0),
     expectedDuePeriods: dueExpected.length,

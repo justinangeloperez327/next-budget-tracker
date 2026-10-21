@@ -202,3 +202,56 @@ test("yearly report CSV keeps AED and PHP in separate columns", () => {
   assert.match(csv, /"Remittance Received PHP"/);
   assert.match(csv, /"2026-10"/);
 });
+
+test("financial exports distinguish pending from completed remittances", () => {
+  const extended: BudgetData = {
+    ...data,
+    remittances: [
+      ...data.remittances!,
+      {
+        id: "pending-export", recipient: "Family", destinationType: "Family / person",
+        sentAmount: 25000, feeAmount: 0, transferDate: "2026-10-08",
+        status: "Pending", principalAsExpense: true, category: "Other",
+      },
+    ],
+  };
+  const report = monthlyFinancialReport(extended, "2026-10", "2026-10-09");
+  assert.equal(report.aed.remitted, 100000);
+  assert.equal(report.aed.pendingRemittances, 25000);
+  const csv = monthlyFinancialReportCsv(extended, "2026-10", "2026-10-09");
+  assert.match(csv, /"Completed remittances","AED",1000\.00/);
+  assert.match(csv, /"Pending remittances","AED",250\.00/);
+  const yearly = yearlyFinancialReport(extended, 2026, "2026-10-09");
+  assert.equal(yearly.aed.pendingRemittances, 25000);
+  assert.match(yearlyFinancialReportCsv(extended, 2026, "2026-10-09"), /"Pending Remittances AED"/);
+});
+
+test("monthly and yearly reports exclude future dated transactions", () => {
+  const extended: BudgetData = {
+    ...data,
+    expenses: [
+      ...data.expenses,
+      { id: "future-charge", description: "Future", amount: 5000, category: "Food", date: "2026-10-25" },
+    ],
+    savingsDeposits: [
+      ...data.savingsDeposits!,
+      { id: "future-saving", goalId: data.savingsGoals![0].id, amount: 2000, depositDate: "2026-10-25" },
+    ],
+    mp2Deposits: [
+      ...data.mp2Deposits!,
+      { id: "future-mp2", accountId: data.mp2Accounts![0].id, amount: 3000, paymentDate: "2026-10-25" },
+    ],
+    governmentContributions: [
+      ...data.governmentContributions!,
+      { id: "future-sss", accountId: data.governmentAccounts![0].id, period: "2026-11", amount: 4000, paymentDate: "2026-11-05", status: "Paid" },
+    ],
+  };
+  const oct = monthlyFinancialReport(extended, "2026-10", "2026-10-09");
+  assert.equal(oct.budget.actual, 51500);
+  assert.equal(oct.aed.savingsAdded, 75000);
+  assert.equal(oct.php.mp2Saved, 100000);
+  assert.equal(oct.php.governmentPaid, 500000);
+  const year = yearlyFinancialReport(extended, 2026, "2026-10-09");
+  assert.equal(year.aed.spent, 231500);
+  assert.equal(year.php.governmentPaid, 500000);
+});

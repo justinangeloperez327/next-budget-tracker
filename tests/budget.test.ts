@@ -252,3 +252,24 @@ test("CSV quotes values and neutralises spreadsheet formulas", () => {
   assert.ok(output.includes('"A ""quoted"", lunch"'));
   assert.ok(output.includes("12.50"));
 });
+
+test("as-of budget variances are distinct from money saved to an account", () => {
+  const data: BudgetData = {
+    expenses: [
+      { ...example, id: "now", amount: 2500, date: "2026-10-04" },
+      { ...example, id: "future", amount: 8000, date: "2026-10-26" },
+    ],
+    budgets: { "2026-10": 10000 },
+    categoryBudgets: { "2026-10": { Food: 9000 } },
+  };
+  const report = monthlyBudgetReport(data, "2026-10", "2026-10-09");
+  assert.equal(report.actual, 2500);
+  assert.equal(report.unspentBudget, 7500);
+  assert.equal(report.underBudgetRate, 75);
+  assert.equal(report.categorySummaries.find((r) => r.category === "Food")?.actual, 2500);
+  const history = historicalBudgetAnalysis(data, ["2026-10"], "2026-10-09");
+  assert.equal(history.totalUnderBudget, 7500);
+  assert.equal(history.averageUnderBudgetRate, 75);
+  assert.equal(history.underBudgetMonths, 1);
+  assert.equal(monthlyBudgetReport(data, "2026-10").actual, 10500);
+});

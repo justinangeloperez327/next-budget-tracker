@@ -53,22 +53,26 @@ export function monthlyFinancialReport(
   month: string,
   today: string,
 ) {
-  const budget = monthlyBudgetReport(data, month);
   const financial = financialDashboardSnapshot(data, month, today);
+  const cutoff = financial.asOfDate;
+  const budget = monthlyBudgetReport(data, month, cutoff);
   const savingsAdded = (data.savingsDeposits ?? [])
-    .filter((entry) => entry.depositDate.startsWith(month))
+    .filter((entry) => entry.depositDate.startsWith(month) && entry.depositDate <= cutoff)
     .reduce((sum, entry) => sum + entry.amount, 0);
   const debtRepaid = (data.debtPayments ?? [])
-    .filter((entry) => entry.paymentDate.startsWith(month))
+    .filter((entry) => entry.paymentDate.startsWith(month) && entry.paymentDate <= cutoff)
     .reduce((sum, entry) => sum + entry.amount, 0);
   const billsPaid = (data.billPayments ?? [])
-    .filter((entry) => entry.paymentDate.startsWith(month))
+    .filter((entry) => entry.paymentDate.startsWith(month) && entry.paymentDate <= cutoff)
     .reduce((sum, entry) => sum + entry.amount, 0);
   const governmentPaid = (data.governmentContributions ?? [])
-    .filter((entry) => entry.period === month && entry.status === "Paid")
+    .filter((entry) =>
+      entry.period === month && entry.status === "Paid" &&
+      (!entry.paymentDate || entry.paymentDate <= cutoff),
+    )
     .reduce((sum, entry) => sum + entry.amount, 0);
   const mp2Saved = (data.mp2Deposits ?? [])
-    .filter((entry) => entry.paymentDate.startsWith(month))
+    .filter((entry) => entry.paymentDate.startsWith(month) && entry.paymentDate <= cutoff)
     .reduce((sum, entry) => sum + entry.amount, 0);
 
   return {
@@ -80,6 +84,7 @@ export function monthlyFinancialReport(
       debtRepaid,
       billsPaid,
       remitted: financial.aed.remitted,
+      pendingRemittances: financial.aed.pendingRemittances,
       remittanceFees: financial.aed.remittanceFees,
       remittanceSupport: financial.aed.remittanceSupport,
       ownAccountTransfers: financial.aed.ownAccountTransfers,
@@ -99,7 +104,7 @@ export function yearlyFinancialReport(
 ) {
   const months = monthsForYear(year, today);
   const monthly = months.map((month) => monthlyFinancialReport(data, month, today));
-  const history = historicalBudgetAnalysis(data, months);
+  const history = historicalBudgetAnalysis(data, months, today);
   const yearPrefix = String(year);
 
   const governmentByProvider = governmentProviders.map((provider) => {
@@ -112,7 +117,9 @@ export function yearlyFinancialReport(
             (entry) =>
               entry.accountId === account.id &&
               entry.period.startsWith(yearPrefix) &&
-              entry.status === "Paid",
+              entry.period <= today.slice(0, 7) &&
+              entry.status === "Paid" &&
+              (!entry.paymentDate || entry.paymentDate <= today),
           )
           .reduce((sum, entry) => sum + entry.amount, 0)
       : 0;
@@ -128,12 +135,15 @@ export function yearlyFinancialReport(
       budget: history.totalBudget,
       spent: history.totalActual,
       variance: history.netVariance,
-      grossSaved: history.totalSaved,
+      grossSaved: history.totalUnderBudget,
       grossOverspent: history.totalOverspent,
       savingsAdded: monthly.reduce((sum, entry) => sum + entry.aed.savingsAdded, 0),
       debtRepaid: monthly.reduce((sum, entry) => sum + entry.aed.debtRepaid, 0),
       billsPaid: monthly.reduce((sum, entry) => sum + entry.aed.billsPaid, 0),
       remitted: monthly.reduce((sum, entry) => sum + entry.aed.remitted, 0),
+      pendingRemittances: monthly.reduce(
+        (sum, entry) => sum + entry.aed.pendingRemittances, 0,
+      ),
       remittanceFees: monthly.reduce(
         (sum, entry) => sum + entry.aed.remittanceFees,
         0,
@@ -180,7 +190,8 @@ export function yearlyFinancialReportCsv(
     "Bills Paid AED",
     "Debt Repaid AED",
     "Savings Added AED",
-    "Remitted AED",
+    "Completed Remittances AED",
+    "Pending Remittances AED",
     "Remittance Fees AED",
     "Own Account Transfers AED",
     "Government Contributions PHP",
@@ -197,6 +208,7 @@ export function yearlyFinancialReportCsv(
     entry.aed.debtRepaid,
     entry.aed.savingsAdded,
     entry.aed.remitted,
+    entry.aed.pendingRemittances,
     entry.aed.remittanceFees,
     entry.aed.ownAccountTransfers,
     entry.php.governmentPaid,
@@ -232,7 +244,8 @@ export function monthlyFinancialReportCsv(
     ["Bills paid", "AED", report.aed.billsPaid],
     ["Debt repaid", "AED", report.aed.debtRepaid],
     ["Savings added", "AED", report.aed.savingsAdded],
-    ["Remitted", "AED", report.aed.remitted],
+    ["Completed remittances", "AED", report.aed.remitted],
+    ["Pending remittances", "AED", report.aed.pendingRemittances],
     ["Remittance fees", "AED", report.aed.remittanceFees],
     ["Own-account transfers", "AED", report.aed.ownAccountTransfers],
     ["Government contributions", "PHP", report.php.governmentPaid],

@@ -162,8 +162,11 @@ test("financial dashboard excludes future MP2 deposits from selected month", () 
 
   assert.equal(october.mp2.totalSaved, 100000);
   assert.equal(october.mp2.currentMonthSaved, 100000);
-  assert.equal(november.mp2.totalSaved, 200000);
-  assert.equal(november.mp2.currentMonthSaved, 100000);
+  assert.equal(november.mp2.totalSaved, 100000);
+  assert.equal(november.mp2.currentMonthSaved, 0);
+  const atNovemberEnd = financialDashboardSnapshot(data, "2026-11", "2026-11-30");
+  assert.equal(atNovemberEnd.mp2.totalSaved, 200000);
+  assert.equal(atNovemberEnd.mp2.currentMonthSaved, 100000);
 });
 
 test("financial dashboard surfaces overdue and contribution attention", () => {
@@ -239,4 +242,76 @@ test("historical dashboard excludes debts and goals that had not started", () =>
   );
   assert.equal(october.debts.originalDebt, 0);
   assert.equal(october.savings.totalTargets, 0);
+});
+
+// Finance snapshots must not include future postings just because their month
+// matches the currently selected calendar month.
+test("as-of date excludes future-dated current month activity", () => {
+  const extended: BudgetData = {
+    ...data,
+    expenses: [
+      ...data.expenses,
+      { id: "future-expense", description: "Tomorrow", amount: 9900, category: "Food", date: "2026-10-28" },
+    ],
+    savingsDeposits: [
+      ...data.savingsDeposits!,
+      { id: "future-savings", goalId: data.savingsGoals![0].id, amount: 6000, depositDate: "2026-10-27" },
+    ],
+    debtPayments: [
+      { id: "future-debt", debtId: data.debts![0].id, expenseId: "fixture-only", amount: 3500, paymentDate: "2026-10-27" },
+    ],
+    mp2Deposits: [
+      ...data.mp2Deposits!,
+      { id: "future-mp2", accountId: data.mp2Accounts![0].id, amount: 12300, paymentDate: "2026-10-26" },
+    ],
+    remittances: [
+      ...data.remittances!,
+      {
+        id: "future-remittance", recipient: "Family", destinationType: "Family / person",
+        sentAmount: 8000, feeAmount: 300, transferDate: "2026-10-29",
+        status: "Pending", principalAsExpense: true, category: "Other",
+      },
+    ],
+  };
+  const snapshot = financialDashboardSnapshot(extended, "2026-10", "2026-10-09");
+  assert.equal(snapshot.asOfDate, "2026-10-09");
+  assert.equal(snapshot.aed.spent, 181500);
+  assert.equal(snapshot.aed.savingsSaved, 200000);
+  assert.equal(snapshot.debts.totalPaid, 0);
+  assert.equal(snapshot.mp2.currentMonthSaved, 100000);
+  assert.equal(snapshot.aed.pendingRemittances, 0);
+  assert.equal(snapshot.php.remittanceReceived, 1550000);
+});
+
+test("pending and completed remittances are separate dashboard amounts", () => {
+  const extended: BudgetData = {
+    ...data,
+    remittances: [
+      ...data.remittances!,
+      {
+        id: "pending-in-month", recipient: "Family", destinationType: "Family / person",
+        sentAmount: 25000, feeAmount: 500, transferDate: "2026-10-08",
+        status: "Pending", principalAsExpense: true, category: "Other",
+      },
+    ],
+  };
+  const snapshot = financialDashboardSnapshot(extended, "2026-10", "2026-10-09");
+  assert.equal(snapshot.aed.remitted, 100000);
+  assert.equal(snapshot.aed.pendingRemittances, 25000);
+  assert.equal(snapshot.remittances.sentAmount, 125000);
+  assert.equal(snapshot.php.remittanceReceived, 1550000);
+});
+
+test("past snapshots use the historical month-end cutoff", () => {
+  const snapshot = financialDashboardSnapshot(data, "2026-10", "2026-11-20");
+  assert.equal(snapshot.asOfDate, "2026-10-31");
+  assert.equal(snapshot.mp2.currentMonthSaved, 100000);
+});
+
+test("future selected month does not reuse the current month's bill period", () => {
+  const snapshot = financialDashboardSnapshot(data, "2026-11", "2026-10-09");
+  assert.equal(snapshot.asOfDate, "2026-10-09");
+  assert.equal(snapshot.bills.period, "2026-11");
+  assert.equal(snapshot.bills.paid, 0);
+  assert.equal(snapshot.aed.spent, 0);
 });

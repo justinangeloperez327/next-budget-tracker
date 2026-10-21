@@ -30,7 +30,7 @@ function toCents(value: FormDataEntryValue | null) {
 }
 
 function statusLabel(status: "saved" | "on-budget" | "overspent") {
-  if (status === "saved") return "Saved";
+  if (status === "saved") return "Under budget";
   if (status === "overspent") return "Overspent";
   return "On budget";
 }

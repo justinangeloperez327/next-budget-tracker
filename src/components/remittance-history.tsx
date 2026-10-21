@@ -64,7 +64,7 @@ export function RemittanceHistory() {
             {year} transfer record
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Review the AED sent, fees paid, and PHP received over time.
+            Review recorded transfers, including pending entries, fees, and PHP received over time.
           </p>
           <Link
             href="/remittances"
@@ -92,7 +92,7 @@ export function RemittanceHistory() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              AED sent
+              AED transfers (incl. pending)
             </CardTitle>
           </CardHeader>
           <CardContent>

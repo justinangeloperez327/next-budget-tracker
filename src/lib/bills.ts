@@ -182,8 +182,8 @@ export function billDashboardSnapshot(
   bills: RecurringBill[],
   payments: BillPayment[],
   asOfDate: string,
+  period = asOfDate.slice(0, 7),
 ) {
-  const period = asOfDate.slice(0, 7);
   const occurrences = billOccurrencesForPeriod(
     bills,
     payments,

@@ -75,6 +75,9 @@ export type MonthlyBudgetReport = {
   budget: number;
   actual: number;
   variance: number;
+  /** Positive budget variance, not cash deposited to a savings account. */
+  unspentBudget: number;
+  underBudgetRate: number;
   saved: number;
   overspent: number;
   savingsRate: number;
@@ -103,9 +106,12 @@ export type HistoricalBudgetAnalysis = {
   totalActual: number;
   netVariance: number;
   totalSaved: number;
+  totalUnderBudget: number;
   totalOverspent: number;
   averageSavingsRate: number;
+  averageUnderBudgetRate: number;
   savedMonths: number;
+  underBudgetMonths: number;
   overspentMonths: number;
   onBudgetMonths: number;
   categoryPerformance: HistoricalCategoryPerformance[];
@@ -192,6 +198,7 @@ export function total(expenses: Expense[]) {
 export function categoryBudgetSummaries(
   data: BudgetData,
   month: string,
+  asOfDate?: string,
 ): CategoryBudgetSummary[] {
   const allocations = data.categoryBudgets?.[month] ?? {};
   const actuals = new Map<Category, number>(
@@ -199,7 +206,7 @@ export function categoryBudgetSummaries(
   );
 
   for (const expense of data.expenses) {
-    if (!expense.date.startsWith(month)) continue;
+    if (!expense.date.startsWith(month) || (asOfDate && expense.date > asOfDate)) continue;
     actuals.set(
       expense.category,
       (actuals.get(expense.category) ?? 0) + expense.amount,
@@ -224,15 +231,18 @@ export function categoryBudgetSummaries(
 export function monthlyBudgetReport(
   data: BudgetData,
   month: string,
+  asOfDate?: string,
 ): MonthlyBudgetReport {
   const budget = data.budgets[month] ?? 0;
   const actual = total(
-    data.expenses.filter((expense) => expense.date.startsWith(month)),
+    data.expenses.filter(
+      (expense) => expense.date.startsWith(month) && (!asOfDate || expense.date <= asOfDate),
+    ),
   );
   const variance = budget - actual;
   const saved = Math.max(variance, 0);
   const overspent = Math.max(-variance, 0);
-  const categorySummaries = categoryBudgetSummaries(data, month);
+  const categorySummaries = categoryBudgetSummaries(data, month, asOfDate);
   const allocated = categorySummaries.reduce(
     (sum, entry) => sum + entry.budget,
     0,
@@ -252,8 +262,10 @@ export function monthlyBudgetReport(
     actual,
     variance,
     saved,
+    unspentBudget: saved,
     overspent,
     savingsRate: budget > 0 ? (saved / budget) * 100 : 0,
+    underBudgetRate: budget > 0 ? (saved / budget) * 100 : 0,
     budgetUsedRate: budget > 0 ? (actual / budget) * 100 : 0,
     allocated,
     unallocated: budget - allocated,
@@ -276,9 +288,10 @@ export function budgetHistoryMonths(data: BudgetData) {
 export function historicalBudgetAnalysis(
   data: BudgetData,
   months: string[] = budgetHistoryMonths(data),
+  asOfDate?: string,
 ): HistoricalBudgetAnalysis {
   const uniqueMonths = [...new Set(months)].toSorted();
-  const reports = uniqueMonths.map((month) => monthlyBudgetReport(data, month));
+  const reports = uniqueMonths.map((month) => monthlyBudgetReport(data, month, asOfDate));
   const totalBudget = reports.reduce((sum, report) => sum + report.budget, 0);
   const totalActual = reports.reduce((sum, report) => sum + report.actual, 0);
   const totalSaved = reports.reduce((sum, report) => sum + report.saved, 0);
@@ -320,7 +333,13 @@ export function historicalBudgetAnalysis(
     totalActual,
     netVariance: totalBudget - totalActual,
     totalSaved,
+    totalUnderBudget: totalSaved,
     totalOverspent,
+    averageUnderBudgetRate:
+      budgetedReports.length > 0
+        ? budgetedReports.reduce((sum, report) => sum + report.underBudgetRate, 0) /
+          budgetedReports.length
+        : 0,
     averageSavingsRate:
       budgetedReports.length > 0
         ? budgetedReports.reduce(
@@ -329,6 +348,9 @@ export function historicalBudgetAnalysis(
           ) / budgetedReports.length
         : 0,
     savedMonths: reports.filter(
+      (report) => report.budget > 0 && report.variance > 0,
+    ).length,
+    underBudgetMonths: reports.filter(
       (report) => report.budget > 0 && report.variance > 0,
     ).length,
     overspentMonths: reports.filter(
