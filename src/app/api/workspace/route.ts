@@ -9,7 +9,8 @@ import {
 } from "@/lib/server/http";
 import { validWorkspace } from "@/lib/workspace-validation";
 import { normalizeManagedExpenseLinks } from "@/lib/workspace-normalization";
-import { reconcileRecords } from "@/lib/workspace-reconcile";
+import { reconcileRecords, retainedChildren } from "@/lib/workspace-reconcile";
+import { MAX_WORKSPACE_REQUEST_BYTES } from "@/lib/workspace-limits";
 import type { BudgetData } from "@/lib/budget";
 
 export const runtime = "nodejs";
@@ -225,6 +226,7 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  const startedAt = Date.now();
   try {
     sameOrigin(request);
     const user = await currentUser();
@@ -233,7 +235,7 @@ export async function PUT(request: Request) {
         401,
         "Your session has expired. Log in again to save your changes.",
       );
-    const input = await readJson(request, 600000);
+    const input = await readJson(request, MAX_WORKSPACE_REQUEST_BYTES);
     if (
       !Number.isSafeInteger(input.revision) ||
       Number(input.revision) < 0 ||
@@ -482,7 +484,7 @@ export async function PUT(request: Request) {
       );
 
       await reconcileRecords(
-        snapshot.budgets.filter((parent) => desired1.some((row) => row.month === parent.month)).flatMap((parent) => parent.allocations),
+        retainedChildren(snapshot.budgets, desired1, (row) => row.month, (row) => row.month, (row) => row.allocations),
         desired2,
         (row) => row.month + "|" + row.category,
         (row) => row.month + "|" + row.category,
@@ -506,7 +508,7 @@ export async function PUT(request: Request) {
       );
 
       await reconcileRecords(
-        snapshot.governmentAccounts.filter((parent) => desired3.some((row) => row.id === parent.id)).flatMap((parent) => parent.contributions),
+        retainedChildren(snapshot.governmentAccounts, desired3, (row) => row.id, (row) => row.id, (row) => row.contributions),
         desired4,
         (row) => row.id,
         (row) => row.id,
@@ -530,7 +532,7 @@ export async function PUT(request: Request) {
       );
 
       await reconcileRecords(
-        snapshot.mp2Accounts.filter((parent) => desired5.some((row) => row.id === parent.id)).flatMap((parent) => parent.deposits),
+        retainedChildren(snapshot.mp2Accounts, desired5, (row) => row.id, (row) => row.id, (row) => row.deposits),
         desired6,
         (row) => row.id,
         (row) => row.id,
@@ -554,7 +556,7 @@ export async function PUT(request: Request) {
       );
 
       await reconcileRecords(
-        snapshot.recurringBills.filter((parent) => desired7.some((row) => row.id === parent.id)).flatMap((parent) => parent.payments),
+        retainedChildren(snapshot.recurringBills, desired7, (row) => row.id, (row) => row.id, (row) => row.payments),
         desired8,
         (row) => row.id,
         (row) => row.id,
@@ -578,7 +580,7 @@ export async function PUT(request: Request) {
       );
 
       await reconcileRecords(
-        snapshot.debts.filter((parent) => desired9.some((row) => row.id === parent.id)).flatMap((parent) => parent.payments),
+        retainedChildren(snapshot.debts, desired9, (row) => row.id, (row) => row.id, (row) => row.payments),
         desired10,
         (row) => row.id,
         (row) => row.id,
@@ -602,7 +604,7 @@ export async function PUT(request: Request) {
       );
 
       await reconcileRecords(
-        snapshot.savingsGoals.filter((parent) => desired11.some((row) => row.id === parent.id)).flatMap((parent) => parent.deposits),
+        retainedChildren(snapshot.savingsGoals, desired11, (row) => row.id, (row) => row.id, (row) => row.deposits),
         desired12,
         (row) => row.id,
         (row) => row.id,
@@ -626,6 +628,16 @@ export async function PUT(request: Request) {
       );
     }, { maxWait: 10000, timeout: 30000 });
 
+    const durationMs = Date.now() - startedAt;
+    if (durationMs >= 2_000)
+      // Observe costly saves without exposing financial amounts or personal data.
+      console.warn("Slow workspace save", {
+        durationMs,
+        recordCount:
+          data.expenses.length + governmentContributions.length +
+          mp2Deposits.length + billPayments.length + debtPayments.length +
+          savingsDeposits.length + remittances.length,
+      });
     return json({ revision: revision + 1 });
   } catch (error) {
     return failure(error, "workspace.save");

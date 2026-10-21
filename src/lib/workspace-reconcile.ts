@@ -1,3 +1,22 @@
+/** Bound SQL placeholder count and statement size during large saves. */
+export const WORKSPACE_MUTATION_BATCH_SIZE = 250;
+
+/** Read children only from parents still present in the desired snapshot.
+ * Build a key set once rather than scanning all desired parents per child.
+ */
+export function retainedChildren<Current, Desired, Child>(
+  current: readonly Current[],
+  desired: readonly Desired[],
+  currentKey: (row: Current) => string,
+  desiredKey: (row: Desired) => string,
+  children: (row: Current) => readonly Child[],
+): Child[] {
+  const retainedKeys = new Set(desired.map(desiredKey));
+  return current.flatMap((parent) =>
+    retainedKeys.has(currentKey(parent)) ? [...children(parent)] : [],
+  );
+}
+
 /**
  * Derive the minimal persisted-row changes from a validated workspace.
  * Extra fields on stored Prisma rows (such as relations and timestamps)
@@ -30,6 +49,9 @@ export function planRecordChanges<Current extends object, Desired extends object
   };
 }
 
+/** Write in predictable, bounded batches, retaining transaction ownership in
+ * the caller so a failed batch rolls back the entire workspace save.
+ */
 export async function reconcileRecords<Current extends object, Desired extends object>(
   current: readonly Current[],
   desired: readonly Desired[],
@@ -42,8 +64,10 @@ export async function reconcileRecords<Current extends object, Desired extends o
   },
 ) {
   const changes = planRecordChanges(current, desired, currentKey, desiredKey);
-  if (changes.remove.length) await actions.remove(changes.remove);
-  if (changes.insert.length) await actions.insert(changes.insert);
+  for (let i = 0; i < changes.remove.length; i += WORKSPACE_MUTATION_BATCH_SIZE)
+    await actions.remove(changes.remove.slice(i, i + WORKSPACE_MUTATION_BATCH_SIZE));
+  for (let i = 0; i < changes.insert.length; i += WORKSPACE_MUTATION_BATCH_SIZE)
+    await actions.insert(changes.insert.slice(i, i + WORKSPACE_MUTATION_BATCH_SIZE));
   for (const row of changes.update) await actions.update(row);
   return changes;
 }

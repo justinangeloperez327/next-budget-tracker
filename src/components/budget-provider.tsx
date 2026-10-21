@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { emptyData, validData, type BudgetData } from "@/lib/budget";
 import { validWorkspace } from "@/lib/workspace-validation";
 import { interpretSaveResponse } from "@/lib/save-response";
+import { jsonByteLength, MAX_WORKSPACE_REQUEST_BYTES } from "@/lib/workspace-limits";
 type Context = {
   data: BudgetData;
   ready: boolean;
@@ -77,13 +78,28 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
       );
       return false;
     }
+    // Fast-fail oversized writes locally rather than uploading data the API
+    // is guaranteed to reject. A rejected write does not advance the revision.
+    let serialized: string;
+    try {
+      serialized = JSON.stringify({ data: next, revision: revision.current });
+    } catch {
+      setSaveError("These changes could not be prepared for saving. Please reload your workspace.");
+      return false;
+    }
+    if (jsonByteLength(serialized) > MAX_WORKSPACE_REQUEST_BYTES) {
+      setSaveError(
+        "This workspace exceeds the 2 MiB save limit. Reduce the number of records or large notes before saving.",
+      );
+      return false;
+    }
     busy.current = true;
     setSaving(true);
     try {
       const response = await fetch("/api/workspace", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: next, revision: revision.current }),
+        body: serialized,
       });
       const result: unknown = await response.json().catch(() => null);
       const outcome = interpretSaveResponse(response.status, result, revision.current);

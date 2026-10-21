@@ -25,6 +25,11 @@ export async function readJson(
 ): Promise<Record<string, unknown>> {
   if (!request.headers.get("content-type")?.startsWith("application/json"))
     throw new HttpError(415, "Send JSON data.");
+  const lengthHeader = request.headers.get("content-length");
+  // A supplied length is an early rejection hint, never a substitute for
+  // counting streamed bytes (which remain authoritative).
+  if (lengthHeader && /^\d+$/.test(lengthHeader) && Number(lengthHeader) > maxBytes)
+    throw new HttpError(413, "Too much data in one request.");
   const reader = request.body?.getReader();
   if (!reader) throw new HttpError(400, "Request data is required.");
   let bytes = 0;
@@ -34,7 +39,7 @@ export async function readJson(
     if (done) break;
     bytes += value.byteLength;
     if (bytes > maxBytes) {
-      await reader.cancel();
+      await reader.cancel().catch(() => undefined);
       throw new HttpError(413, "Too much data in one request.");
     }
     chunks.push(value);
@@ -75,7 +80,14 @@ export function failure(error: unknown, operation = "unknown") {
   });
   return Response.json(
     { error: classification.message, code: classification.code, requestId },
-    { status: classification.status, headers: { "Cache-Control": "no-store" } },
+    {
+      status: classification.status,
+      headers: {
+        "Cache-Control": "no-store",
+        "X-Request-ID": requestId,
+        ...(classification.status === 503 ? { "Retry-After": "3" } : {}),
+      },
+    },
   );
 }
 export function json(data: unknown) {

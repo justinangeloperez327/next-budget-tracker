@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { planRecordChanges, reconcileRecords } from "../src/lib/workspace-reconcile.ts";
+import { WORKSPACE_MUTATION_BATCH_SIZE, planRecordChanges, reconcileRecords, retainedChildren } from "../src/lib/workspace-reconcile.ts";
 
 test("unchanged persisted scalars never generate updates", () => {
   const existing = [{ id: "a", userId: "owner", amount: BigInt(12), createdAt: new Date() }];
@@ -55,4 +55,60 @@ test("unchanged sets do zero writes, modified sets only necessary writes", async
   assert.deepEqual(calls, []);
   await reconcileRecords(existing, [{ id: "b", amount: 5 }, { id: "c", amount: 9 }], key, key, ops);
   assert.deepEqual(calls, ["delete:a", "insert:c", "update:b"]);
+});
+
+test("retained children excludes deleted parents and scales with keyed membership", () => {
+  const current = Array.from({ length: 1_200 }, (_, index) => ({
+    id: `parent-${index}`,
+    payments: [{ id: `payment-${index}`, owner: `parent-${index}` }],
+  }));
+  const desired = Array.from({ length: 600 }, (_, index) => ({ id: `parent-${index * 2}` }));
+  const children = retainedChildren(
+    current, desired, (row) => row.id, (row) => row.id, (row) => row.payments,
+  );
+  assert.equal(children.length, 600);
+  assert.deepEqual(children[0], { id: "payment-0", owner: "parent-0" });
+  assert.ok(children.every((child) => Number(child.id.slice(8)) % 2 === 0));
+});
+
+test("large inserts are split into bounded calls, including the final partial batch", async () => {
+  const existing: { id: string }[] = [];
+  const incoming = Array.from({ length: 601 }, (_, index) => ({ id: String(index) }));
+  const sizes: number[] = [];
+  const operations = {
+    remove: async () => { assert.fail("no removals expected"); },
+    insert: async (rows: { id: string }[]) => { sizes.push(rows.length); },
+    update: async () => { assert.fail("no updates expected"); },
+  };
+  await reconcileRecords(existing, incoming, (row) => row.id, (row) => row.id, operations);
+  assert.equal(WORKSPACE_MUTATION_BATCH_SIZE, 250);
+  assert.deepEqual(sizes, [250, 250, 101]);
+});
+
+test("large removals are split into bounded batches without extra inserts", async () => {
+  const existing = Array.from({ length: 505 }, (_, index) => ({ id: String(index) }));
+  const sizes: number[] = [];
+  await reconcileRecords(existing, [], (row) => row.id, (row: { id: string }) => row.id, {
+    remove: async (keys) => { sizes.push(keys.length); },
+    insert: async () => { assert.fail("no inserts expected"); },
+    update: async () => { assert.fail("no updates expected"); },
+  });
+  assert.deepEqual(sizes, [250, 250, 5]);
+});
+
+test("a failed batch stops later writes so the enclosing transaction can roll back", async () => {
+  const incoming = Array.from({ length: 501 }, (_, index) => ({ id: String(index) }));
+  let attempts = 0;
+  await assert.rejects(
+    reconcileRecords([], incoming, (row: { id: string }) => row.id, (row) => row.id, {
+      remove: async () => { assert.fail("no removes expected"); },
+      insert: async () => {
+        attempts += 1;
+        if (attempts === 2) throw Error("simulated database failure");
+      },
+      update: async () => { assert.fail("no updates expected"); },
+    }),
+    /simulated database failure/,
+  );
+  assert.equal(attempts, 2);
 });

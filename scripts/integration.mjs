@@ -489,9 +489,9 @@ try {
 
   const oversized = await request("/api/workspace", {
     method: "PUT", cookie,
-    body: { data: truncatedData, revision: 7, padding: "x".repeat(620_000) },
+    body: { data: truncatedData, revision: 7, padding: "x".repeat(2_100_000) },
   });
-  assert.equal(oversized.status, 413, "oversized request is rejected");
+  assert.equal(oversized.status, 413, "requests exceeding the 2 MiB limit are rejected");
   assert.equal(
     (await (await request("/api/workspace", { cookie })).json()).revision,
     7,
