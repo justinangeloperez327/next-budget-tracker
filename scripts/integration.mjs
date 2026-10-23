@@ -614,6 +614,54 @@ try {
       remittances: [],
     },
   );
+  // Native Android bearer sessions must remain independent of browser cookies.
+  const mobileRequest = (path, { method = "GET", body, token, headers = {} } = {}) =>
+    fetch(base + path, {
+      method,
+      headers: { "Content-Type": "application/json",
+        ...(token ? { Authorization: "Bearer " + token } : {}), ...headers },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+  assert.equal((await mobileRequest("/api/mobile/workspace")).status, 401);
+  assert.equal((await mobileRequest("/api/mobile/auth/login", {
+    method: "POST", body: credentials, headers: { Origin: "https://untrusted.example" },
+  })).status, 403);
+  assert.equal((await mobileRequest("/api/mobile/auth/login", {
+    method: "POST", body: { ...credentials, password: "wrong-password" },
+  })).status, 401);
+  const mobileLogin = await mobileRequest("/api/mobile/auth/login", { method: "POST", body: credentials });
+  assert.equal(mobileLogin.status, 200);
+  assert.equal(mobileLogin.headers.get("set-cookie"), null, "mobile auth must not issue browser cookies");
+  const mobileAuth = await mobileLogin.json();
+  assert.equal(mobileAuth.user.email, email);
+  assert.match(mobileAuth.accessToken, /^[a-f0-9]{64}$/);
+  const bearer = mobileAuth.accessToken;
+  assert.equal((await mobileRequest("/api/workspace", { token: bearer })).status, 401,
+    "web API cannot be authenticated using a bearer token");
+  assert.equal((await mobileRequest("/api/mobile/workspace", {
+    token: bearer, headers: { Cookie: newCookie },
+  })).status, 403, "mobile workspace cannot accept cookies");
+  const beforeMobile = await (await mobileRequest("/api/mobile/workspace", { token: bearer })).json();
+  assert.equal(beforeMobile.revision, 9);
+  assert.deepEqual(beforeMobile.data.expenses, []);
+  const mobileData = { ...beforeMobile.data, budgets: { "2026-10": 200_00 },
+    expenses: [{ id: randomUUID(), description: "Android lunch", amount: 1250,
+      category: "Food", date: "2026-10-23" }] };
+  const mobilePut = await mobileRequest("/api/mobile/workspace", {
+    method: "PUT", token: bearer, body: { revision: beforeMobile.revision, data: mobileData },
+  });
+  assert.equal(mobilePut.status, 200, await mobilePut.text());
+  const webAfterMobile = await (await request("/api/workspace", { cookie: newCookie })).json();
+  assert.equal(webAfterMobile.revision, 10);
+  assert.deepEqual(webAfterMobile.data, mobileData, "mobile writes must be visible on the web");
+  const conflict = await mobileRequest("/api/mobile/workspace", { method: "PUT", token: bearer,
+    body: { revision: 9, data: beforeMobile.data } });
+  assert.equal(conflict.status, 409, "stale mobile saves must not overwrite web changes");
+  assert.equal((await mobileRequest("/api/mobile/auth/logout", { method: "POST", token: bearer })).status, 200);
+  assert.equal((await mobileRequest("/api/mobile/workspace", { token: bearer })).status, 401);
+  // Second user stays isolated from the first user mobile changes.
+  assert.equal((await (await request("/api/workspace", { cookie: secondCookie })).json()).revision, 1);
+  console.log("PASS: mobile bearer login/logout, isolation, secure headers, shared saves, stale revision rejection.");
   console.log(
     "PASS: registration, session cookies, login/logout, persistence, isolation, deletion, CSRF and stale-write protection.",
   );
