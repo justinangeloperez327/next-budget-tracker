@@ -134,3 +134,15 @@ Sakura is the default theme, with the original warm pink palette, notebook paper
 Use the palette button in the appearance controls to choose a character theme. Character choice is independent of Light, Dark, or System appearance, persists across reloads and sign-in, and syncs across open tabs. The saved palette is applied before paint. Browsers with blocked storage can still change the current tab's theme.
 
 The dashboard graph, mobile navigation, account-session fixes, and Playwright coverage remain in place. Character selection does not change financial data. Browser tests cover the default Sakura theme, all eight character selections, persistence, and appearance combinations on desktop and mobile.
+
+## Android mobile API (manual deployment required)
+
+The native kotlin-budget-tracker Android app (https://github.com/justinangeloperez327/kotlin-budget-tracker) uses separate mobile bearer sessions instead of weakening the browser cookie and same-origin controls. Routes: POST /api/mobile/auth/register, /login, /logout; GET and PUT /api/mobile/workspace.
+
+Mobile and browser workspaces share the same owner-scoped validation, PostgreSQL transactions, and optimistic revision contract. Mobile credentials are hashed (SHA-256) in the independent MobileSession database table, expire after seven days, and are revoked at logout. Mobile routes reject browser Origin and Cookie headers and never enable wildcard CORS.
+
+**Deployment:** apply migration 20261023150000_mobile_session before manually deploying this backend. Git-triggered Vercel deployments are disabled. Use HTTPS from the Android app; never expose PostgreSQL connection strings or mobile tokens to client logs.
+
+Current native changes cover budgets, category allocations and manual expenses, preserving unported tracker data on every complete revision-safe payload. The app rejects stale or ambiguous saves until explicit refresh. Device-only local record import is not yet supported.
+
+Run the isolated PostgreSQL suite (npm run test:integration) to exercise mobile auth, web/mobile write visibility, revocation, browser isolation and revision conflict protection.
