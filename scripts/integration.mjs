@@ -659,6 +659,24 @@ try {
   assert.equal(conflict.status, 409, "stale mobile saves must not overwrite web changes");
   assert.equal((await mobileRequest("/api/mobile/auth/logout", { method: "POST", token: bearer })).status, 200);
   assert.equal((await mobileRequest("/api/mobile/workspace", { token: bearer })).status, 401);
+  const mobileRegisteredEmail = `mobile-${randomUUID()}@example.com`;
+  const mobileRegistration = await mobileRequest("/api/mobile/auth/register", {
+    method: "POST",
+    body: { email: mobileRegisteredEmail, password: "mobile-registration-password", name: "Mobile User" },
+  });
+  assert.equal(mobileRegistration.status, 200);
+  const mobileRegistrationBody = await mobileRegistration.json();
+  const mobileNewAccount = await (await mobileRequest("/api/mobile/workspace", {
+    token: mobileRegistrationBody.accessToken,
+  })).json();
+  assert.equal(mobileNewAccount.user.email, mobileRegisteredEmail);
+  assert.equal(mobileNewAccount.revision, 0);
+  assert.deepEqual(mobileNewAccount.data.expenses, []);
+  assert.deepEqual(mobileNewAccount.data.budgets, {});
+  assert.equal((await mobileRequest("/api/mobile/auth/logout", {
+    method: "POST", token: mobileRegistrationBody.accessToken,
+  })).status, 200);
+
   // Second user stays isolated from the first user mobile changes.
   assert.equal((await (await request("/api/workspace", { cookie: secondCookie })).json()).revision, 1);
   console.log("PASS: mobile bearer login/logout, isolation, secure headers, shared saves, stale revision rejection.");
